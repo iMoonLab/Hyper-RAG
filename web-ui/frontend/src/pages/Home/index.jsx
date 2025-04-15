@@ -285,7 +285,7 @@ const Independent = () => {
     <Space direction="vertical" size={16} className={styles.placeholder}>
       <Welcome
         variant="borderless"
-        icon="https://avatars.githubusercontent.com/u/45651553?s=48&v=4"
+        //icon="https://avatars.githubusercontent.com/u/45651553?s=48&v=4"
         title="Hello, I'm Hyper-RAG"
         description="Base on Knowledge Hypergraph, AGI product interface solution, create a better intelligent vision~"
         extra={
@@ -365,7 +365,7 @@ const Independent = () => {
   return (
     <div>
       <div className={styles.topMenu}>
-        <div style={{ fontWeight: 700 }}>知识库选择</div>
+        <div style={{ fontWeight: 700,fontSize:'16px'}}>知识库</div>
         <div style={{ display: 'flex', gap: 8, flex: 1, marginLeft: 20, alignItems: 'center' }}>
           <Button
             className={styles.topCard}

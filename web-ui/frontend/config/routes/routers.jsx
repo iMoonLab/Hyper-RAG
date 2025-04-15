@@ -18,36 +18,37 @@ export const routers = [
     errorElement: <ErrorPage />,
     icon: <SmileFilled />,
     children: [
-      {
-        path: '/Hyper/show',
-        name: '超图展示',
-        icon: <DeploymentUnitOutlined />,
-        // permissionObj: true,
-        element: <Graph />
-      },
+
       {
         path: '/Hyper/qa',
-        name: '检索问答',
+        name: 'Chat',
         icon: <QuestionCircleOutlined />,
         // permissionObj: true,
         element: <Home />
       },
       {
+        path: '/Hyper/show',
+        name: 'Hypergraph Visualization',
+        icon: <DeploymentUnitOutlined />,
+        // permissionObj: true,
+        element: <Graph />
+      },
+      {
         path: '/Hyper/files',
-        name: '文档上传',
+        name: 'Upload Documents',
         icon: <FileAddOutlined />,
         element: <Files />,
       },
-      {
-        path: '/Hyper/DB',
-        name: 'HypergraphDB',
-        icon: <DatabaseOutlined />,
-        // permissionObj: true,
-        element: <Home />
-      },
+      // {
+      //   path: '/Hyper/DB',
+      //   name: 'HypergraphDB',
+      //   icon: <DatabaseOutlined />,
+      //   // permissionObj: true,
+      //   element: <Home />
+      // },
       {
         path: '/Setting',
-        name: 'key设置',
+        name: 'Key Setting',
         icon: <SettingOutlined />,
         // permissionObj: true,
         element: <Home />

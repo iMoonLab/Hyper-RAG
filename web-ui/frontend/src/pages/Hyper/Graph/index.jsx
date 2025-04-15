@@ -28,6 +28,7 @@ export default () => {
     descriptions: [''],
     properties: ['']
   });
+  const [mode,setMode] = useState('node');
 
   useEffect(() => {
     fetch(SERVER_URL + '/db/vertices')
@@ -49,8 +50,23 @@ export default () => {
         });
       }
       )
-  }, []);
-
+  }, [mode]);
+  useEffect(() => {
+    if (mode==='hyperedge'){
+      fetch(SERVER_URL + '/db/hyperedges')
+        .then((res) => res.json())
+        .then((data) => {
+          setKeys(data);
+        }
+        )
+      fetch(SERVER_URL + '/db/hyperedge_neighbor/' + '二郎神')
+        .then((res) => res.json())
+        .then((data) => {
+          setData(data);
+        }
+        )
+      }
+  }, [mode]);
   useEffect(() => {
     if (!key) return;
     fetch(SERVER_URL + '/db/vertices_neighbor/' + key)
@@ -67,7 +83,32 @@ export default () => {
       }
       )
   }, [key]);
-
+  const handleAfterRender = (graph) => {
+    // 遍历所有节点并将它们放到最上层
+    graph.getNodes().forEach((node) => {
+      graph.toFront(node); // 将节点放到最上层
+    });
+  
+    // 确保 labelText 也显示在最上层
+    graph.getNodes().forEach((node) => {
+      const labelShape = node.get('group').find((element) => element.get('name') === 'text-shape');
+      if (labelShape) {
+        labelShape.toFront(); // 将 labelText 放到最上层
+      }
+    });
+  };
+  const handleNodeClick = (event) => {
+    if (mode === 'node') {
+      const { id } = event.item.getModel();
+      setKey(id);
+    }
+  };
+  const handleHyperedgeClick = (event) => {
+    if (mode === 'hyperedge') {
+      const { labelText } = event.item.getModel();
+      console.log('Selected Hyperedge:', labelText);
+    }
+  };  
   const options = useMemo(
     () => {
       let groupedNodesByCluster = {};
@@ -83,6 +124,12 @@ export default () => {
           hyperData.nodes.push({
             id: key,
             label: key,
+            style: {
+              fill: '#4B0082', // 设置为紫色
+              stroke: '#4B0082', // 边框也为紫色
+              zIndex: 999, // 设置 z-index 为 999，保证节点在最上层
+            },
+
             ...data.vertices[key],
           });
         }
@@ -110,6 +157,7 @@ export default () => {
           edgeInfluenceFactor: 1,
           nonMemberInfluenceFactor: -0.8,
           virtualEdges: true,
+          zIndex:-1,
         });
 
         const keys = Object.keys(data.edges);
@@ -124,6 +172,7 @@ export default () => {
             members: nodes,
             labelText: '' + edge.keywords,
             ...createStyle(colors[i % 10]),
+
           });
         }
       }
@@ -146,8 +195,19 @@ export default () => {
         data: hyperData,
         node: {
           palette: { field: 'cluster' },
+          // style: {
+          //   fill: '#800080', // 所有节点填充色为紫色
+          //   stroke: '#800080', // 所有节点边框色为紫色
+          //   labelFill: '#fff', // 标签文字颜色（白色）
+          //   labelPadding: 2,
+          //   labelBackgroundFill: '#800080', // 标签背景色
+          //   labelBackgroundRadius: 5,
+          //   labelPlacement: 'center',
+          //   labelAutoRotate: false,
+          // },
           style: {
             labelText: d => d.id,
+            zIndex:999,
           }
         },
         animate: false,
@@ -181,7 +241,17 @@ export default () => {
   if (!data) return <p>Loading...</p>;
 
   return <>
-    选择实体：<Select onChange={setKey} style={{ width: 300 }} defaultValue={'刘伯钦'} showSearch>
+  Focuse on <></>
+    <Select
+    value={mode}
+    onChange={(value) => setMode(value)}
+    style={{ width: 150 }}
+  >
+    <Select.Option value="node">Entity</Select.Option>
+    <Select.Option value="hyperedge">Relation</Select.Option>
+  </Select> 
+  <> </>
+    <Select onChange={setKey} style={{ width: 300 }} defaultValue={'刘伯钦'} showSearch>
       {keys.map((key) => {
         return <Select.Option key={key} value={key} >{key}</Select.Option>
       })}
@@ -189,7 +259,12 @@ export default () => {
     <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
       <Graphin options={options} id="my-graphin-demo"
       className="my-graphin-container"
-        style={{ width: '100%', height: '80vh' }} />
+        style={{ width: '100%', height: '80vh' }} 
+        onNodeClick={handleNodeClick}
+        onEdgeClick={handleHyperedgeClick}
+        onAfterRender={(graph) => handleAfterRender(graph)} // 在渲染完成后调整层级
+        />
+
       <Card
         title={item.entity_name}
         style={{ width: 400, margin: '20px' }}
