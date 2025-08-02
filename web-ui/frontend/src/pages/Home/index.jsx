@@ -36,6 +36,7 @@ import { SERVER_URL } from '../../utils'
 import DatabaseSelector from '../../components/DatabaseSelector'
 import RetrievalInfo from '../../components/RetrievalInfo'
 import RetrievalHyperGraph from '../../components/RetrievalHyperGraph'
+import { conversations as defaultConversations } from './data'
 
 const HyperRAGHome = () => {
     // State
@@ -44,7 +45,7 @@ const HyperRAGHome = () => {
     const [inputValue, setInputValue] = useState('')
     const [queryMode, setQueryMode] = useState('hyper')
     const [isLoading, setIsLoading] = useState(false)
-    const [availableModes, setAvailableModes] = useState(['llm', 'naive', 'graph', 'hyper', 'hyper-lite'])
+    const [availableModes, setAvailableModes] = useState(['naive', 'graph', 'hyper'])
     
     // 新增对比模式相关状态
     const [isCompareMode, setIsCompareMode] = useState(false)
@@ -80,13 +81,13 @@ const HyperRAGHome = () => {
                     }
                 } else {
                     // 如果没有配置或配置为空，使用默认配置
-                    setAvailableModes(['llm', 'naive', 'graph', 'hyper', 'hyper-lite'])
+                    setAvailableModes(['naive', 'graph', 'hyper'])
                 }
             }
         } catch (error) {
             console.error('Failed to load mode settings:', error)
             // 出错时使用默认配置
-            setAvailableModes(['llm', 'naive', 'graph', 'hyper', 'hyper-lite'])
+            setAvailableModes(['naive', 'graph', 'hyper'])
         }
     }
 
@@ -115,7 +116,7 @@ const HyperRAGHome = () => {
 
     const loadFromStorage = () => {
         try {
-            const savedConversations = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS)
+            const savedConversations = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS) || JSON.stringify(defaultConversations)
             const savedActiveId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ID)
 
             if (savedConversations) {

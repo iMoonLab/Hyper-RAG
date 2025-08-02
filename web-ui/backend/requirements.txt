@@ -1,6 +1,5 @@
-fastapi
+fastapi[standard]
 uvicorn
-accelerate
 aioboto3
 aiohttp
 numpy
@@ -8,12 +7,9 @@ nano-vectordb
 openai
 tenacity
 tiktoken
-xxhash
 pydantic
 python-multipart
 websockets
 aiofiles
-sqlalchemy
 PyPDF2
 docx2txt
-markdown

@@ -180,7 +180,7 @@ const HyperGraph = ({
                 'drag-canvas',
                 'drag-element',
             ],
-            autoFit: 'view',
+            autoFit: 'center',
             layout: {
                 type: 'force',
                 clustering: true,

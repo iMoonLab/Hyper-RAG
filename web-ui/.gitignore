@@ -28,3 +28,4 @@ __pycache__
 frontend/.env.*
 backend/file_metadata.json
 local
+backend/data

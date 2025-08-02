@@ -1,0 +1,50 @@
+# Docker 忽略文件
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Node modules (会在容器内重新安装)
+**/node_modules
+**/npm-debug.log*
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
+**/.pytest_cache
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+**/*.log
+
+# Build outputs
+**/dist
+**/build
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Runtime data
+data/
+temp/
+*.db
+*.sqlite

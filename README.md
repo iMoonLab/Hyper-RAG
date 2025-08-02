@@ -25,6 +25,7 @@
   <a href="#sparkles-why-hyper-rag-is-more-powerful">Features</a> &#xa0; | &#xa0;
   <a href="#rocket-installation">Installation</a> &#xa0; | &#xa0;
   <a href="#white_check_mark-quick-start">Quick Start</a> &#xa0; | &#xa0;
+  <a href="#whale-docker-deployment">Docker</a> &#xa0; | &#xa0;
   <a href="#checkered_flag-evaluation">Evaluation</a> &#xa0; | &#xa0;
   <a href="#memo-license">License</a> &#xa0; | &#xa0;
   <a href="https://github.com/yifanfeng97" target="_blank">Author</a>
@@ -155,7 +156,30 @@ We provide a web-based visualization tool for hypergraphs and lightweight Hyper-
 ![vis-qa](https://github.com/user-attachments/assets/3d4970a8-a52a-46e1-b39d-de8c3caa53e5)
 ![vis-hg](https://github.com/user-attachments/assets/9e2fdc5c-56ed-467d-83db-fa447c6c48f3)
 
+## :whale: Docker Deployment
 
+We provide Docker support for easy deployment of the Hyper-RAG Web UI. Docker deployment includes both frontend and backend services with optional Nginx reverse proxy.
+
+### Quick Start with Docker
+
+1. **Prerequisites**: Ensure Docker and Docker Compose are installed on your system.
+
+2. **Navigate to web-ui directory**:
+```bash
+cd web-ui
+```
+
+3. **Start with Docker Compose**:
+```bash
+docker-compose up 
+```
+
+4. **Access the application**:
+   - Application at http://localhost
+
+### Detailed Documentation
+
+For comprehensive Docker deployment instructions, configuration options, troubleshooting, and production deployment guidelines, please refer to our detailed [Docker Deployment Guide](./web-ui/DOCKER.md).
 
 ## :checkered_flag: Evaluation
 In this work, we propose two evaluation strategys: the **selection-based** and **scoring-based** evaluation. 

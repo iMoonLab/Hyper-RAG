@@ -1,0 +1,63 @@
+# 生产环境 Docker Compose 配置
+# 包含 Nginx 反向代理
+
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: yuxizhe/hyper-rag-backend:latest
+    container_name: hyperrag-backend
+    volumes:
+      - hyperrag_cache_data:/app/hyperrag_cache
+    networks:
+      - hyperrag-network
+    restart: unless-stopped
+    # 不直接暴露端口，通过 nginx 代理
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # 生产环境中，API 请求通过 nginx 代理到 /api/ 路径
+        - VITE_SERVER_URL=/api
+    image: yuxizhe/hyper-rag-frontend:latest
+    container_name: hyperrag-frontend
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=production
+    networks:
+      - hyperrag-network
+    restart: unless-stopped
+    # 不直接暴露端口，通过 nginx 代理
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: hyperrag-nginx
+    ports:
+      - "80:80"
+      - "443:443"  # 为 HTTPS 预留
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      # SSL 证书目录 (如果使用 HTTPS)
+      # - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - hyperrag-network
+    restart: unless-stopped
+
+networks:
+  hyperrag-network:
+    driver: bridge
+
+volumes:
+  hyperrag_cache_data:

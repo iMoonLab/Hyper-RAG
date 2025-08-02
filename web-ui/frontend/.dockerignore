@@ -1,0 +1,31 @@
+# Node modules
+node_modules
+npm-debug.log*
+
+# Build outputs  
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker files
+Dockerfile
+.dockerignore
