@@ -253,7 +253,7 @@ async def delete_hyperedge_endpoint(hyperedge_id: str, database: str = None):
 class SettingsModel(BaseModel):
     apiKey: str = ""
     modelProvider: str = "openai"
-    modelName: str = "gpt-4.1-mini"
+    modelName: str = "gpt-5-mini"
     baseUrl: str = "https://api.openai.com/v1"
     selectedDatabase: str = ""
     maxTokens: int = 2000
@@ -340,15 +340,7 @@ async def get_databases():
         
         for file in database_files:
             # 根据文件名推断描述
-            description = ""
-            if 'wukong' in file:
-                description = "西游记超图"
-            elif 'sanguo' in file:
-                description = "三国演义超图"
-            elif 'Christmas' in file:
-                description = "圣诞颂歌超图"
-            else:
-                description = f"{file.replace('.hgdb', '')}超图"
+            description = f"{file.replace('.hgdb', '')}超图"
             
             databases.append({
                 "name": file,
@@ -442,7 +434,7 @@ async def get_hyperrag_llm_func(prompt, system_prompt=None, history_messages=[],
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
             settings = json.load(f)
         
-        model_name = settings.get("modelName", "gpt-4.1-mini")
+        model_name = settings.get("modelName", "gpt-5-mini")
         api_key = settings.get("apiKey")
         base_url = settings.get("baseUrl")
         

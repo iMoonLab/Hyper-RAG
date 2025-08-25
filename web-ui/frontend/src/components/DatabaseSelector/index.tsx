@@ -4,6 +4,7 @@ import type { SizeType } from 'antd/es/config-provider/SizeContext';
 import { observer } from 'mobx-react';
 import { DatabaseOutlined, ReloadOutlined } from '@ant-design/icons';
 import { storeGlobalUser } from '../../store/globalUser';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -34,12 +35,16 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
     mode = 'select',
     showCurrent = true,
     showRefresh = false,
-    placeholder = '请选择数据库',
+    placeholder,
     style = {},
     size = 'middle',
     onChange,
     disabled = false
 }) => {
+    const { t } = useTranslation();
+    
+    // 如果没有提供placeholder，使用默认的国际化文本
+    const defaultPlaceholder = placeholder || t('database.select_database_placeholder');
 
     // 初始化数据库列表
     useEffect(() => {
@@ -61,9 +66,9 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
     const handleRefresh = async () => {
         try {
             await storeGlobalUser.loadDatabases();
-            message.success('数据库列表已刷新');
+            message.success(t('database.refresh_success'));
         } catch (error) {
-            message.error('刷新数据库列表失败');
+            message.error(t('database.refresh_failed'));
         }
     };
 

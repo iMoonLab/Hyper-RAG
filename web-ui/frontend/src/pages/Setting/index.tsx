@@ -27,7 +27,7 @@ import {
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import LanguageSelector from '../../components/LanguageSelector'
-import { SERVER_URL } from '../../utils';
+import { SERVER_URL } from '../../utils'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -60,7 +60,12 @@ const Setting: React.FC = () => {
     { value: 'naive', label: 'RAG', icon: '📚', description: '基础检索增强生成' },
     { value: 'graph', label: 'Graph-RAG', icon: '🕸️', description: '基于图结构的检索增强生成' },
     { value: 'hyper', label: 'Hyper-RAG', icon: '⚡', description: '基于超图的检索增强生成' },
-    { value: 'hyper-lite', label: 'Hyper-RAG-Lite', icon: '🔸', description: '轻量级超图检索增强生成' }
+    {
+      value: 'hyper-lite',
+      label: 'Hyper-RAG-Lite',
+      icon: '🔸',
+      description: '轻量级超图检索增强生成'
+    }
   ]
 
   // 模型提供商配置
@@ -68,19 +73,19 @@ const Setting: React.FC = () => {
     {
       value: 'openai',
       label: 'OpenAI',
-      models: ['gpt-3.5-turbo', 'gpt-4o-mini', 'gpt-4o'],
+      models: ['gpt-5', 'gpt-5-mini', 'gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
       defaultBaseUrl: 'https://api.openai.com/v1'
     },
     {
       value: 'azure',
       label: 'Azure OpenAI',
-      models: ['gpt-35-turbo', 'gpt-4', 'gpt-4o-mini', 'gpt-4-32k'],
+      models: ['gpt-5', 'gpt-5-mini', 'gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
       defaultBaseUrl: 'https://your-resource.openai.azure.com'
     },
     {
       value: 'anthropic',
       label: 'Anthropic',
-      models: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus'],
+      models: ['claude-4-haiku', 'claude-4-sonnet', 'claude-4-opus'],
       defaultBaseUrl: 'https://api.anthropic.com'
     },
     {
@@ -431,8 +436,8 @@ const Setting: React.FC = () => {
             </Form.Item>
           </Card>
 
-                    {/* Mode配置区块 */}
-                    <Card
+          {/* Mode配置区块 */}
+          <Card
             title={
               <span>
                 <AppstoreOutlined style={{ marginRight: '8px' }} />

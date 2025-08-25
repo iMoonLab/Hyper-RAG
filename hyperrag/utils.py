@@ -309,3 +309,29 @@ def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
         return new_loop
+
+def deduplicate_by_key(data_list, key_string):
+    unique_data = []
+    seen_keys = set()
+
+    def make_hashable(value):
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, list):
+            try:
+                return tuple(sorted(make_hashable(v) for v in value))
+            except TypeError:
+                return json.dumps(value, ensure_ascii=False, sort_keys=True)
+        if isinstance(value, dict):
+            return tuple(sorted((k, make_hashable(v)) for k, v in value.items()))
+        return str(value)
+
+    for item in data_list:
+        raw_key = item.get(key_string)
+        if raw_key is None:
+            continue
+        key = make_hashable(raw_key)
+        if key not in seen_keys:
+            seen_keys.add(key)
+            unique_data.append(item)
+    return unique_data  

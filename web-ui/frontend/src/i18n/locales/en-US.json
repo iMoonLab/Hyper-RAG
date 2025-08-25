@@ -211,5 +211,29 @@
   "home": {
     "title": "Welcome to Hyper-RAG",
     "description": "Retrieval-Augmented Generation System based on Hypergraphs"
+  },
+  "retrieval": {
+    "title": "Visualization",
+    "mode": "Mode",
+    "hyperedge_count": "Hyperedge",
+    "edge_count": "Edge",
+    "chart_load_failed": "Chart loading failed",
+    "entity_type": "Type",
+    "description": "Description",
+    "unknown": "Unknown",
+    "entity_from_hyperedge": "Entity from hyperedge",
+    "retrieval_info_details": "Retrieval Information Details",
+    "retrieval_info_tooltip": "Expand to view detailed entity, hyperedge and document information",
+    "retrieved_hyperedges": "Retrieved Hyperedges",
+    "retrieved_edges": "Retrieved Edges",
+    "retrieved_entities": "Retrieved Entities",
+    "retrieved_documents": "Retrieved Documents",
+    "document_fragment": "Document Fragment",
+    "connected_entities": "Connected Entities",
+    "relevance": "Relevance",
+    "weight": "Weight",
+    "expand": "Expand",
+    "properties": "Properties",
+    "keywords": "Keywords"
   }
 }

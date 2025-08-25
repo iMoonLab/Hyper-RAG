@@ -211,5 +211,29 @@
   "home": {
     "title": "欢迎使用 Hyper-RAG",
     "description": "基于超图的检索增强生成系统"
+  },
+  "retrieval": {
+    "title": "检索结果可视化",
+    "mode": "模式",
+    "hyperedge_count": "超边数量",
+    "edge_count": "边数量",
+    "chart_load_failed": "图表加载失败",
+    "entity_type": "类型",
+    "description": "描述",
+    "unknown": "未知",
+    "entity_from_hyperedge": "来自超边的实体",
+    "retrieval_info_details": "检索信息详情",
+    "retrieval_info_tooltip": "展开查看详细的实体、超边和文档信息",
+    "retrieved_hyperedges": "检索到的超边",
+    "retrieved_edges": "检索到的边",
+    "retrieved_entities": "检索到的实体",
+    "retrieved_documents": "检索到的文档",
+    "document_fragment": "文档片段",
+    "connected_entities": "连接实体",
+    "relevance": "相关度",
+    "weight": "权重",
+    "expand": "展开",
+    "properties": "属性",
+    "keywords": "关键词"
   }
 }

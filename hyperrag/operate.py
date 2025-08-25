@@ -20,6 +20,7 @@ from .utils import (
     split_string_by_multi_markers,
     truncate_list_by_token_size,
     process_combine_contexts,
+    deduplicate_by_key,
 )
 from .base import (
     BaseKVStorage,
@@ -1132,10 +1133,11 @@ async def hyper_query(
         so that we can have the final retrieval information.
     """
     context = combine_contexts(relation_context.get("context"), entity_context.get("context"))
+
     contextJson = {
-        "entities": entity_context.get("entities") + relation_context.get("entities"),
-        "hyperedges": relation_context.get("hyperedges") + relation_context.get("hyperedges"),
-        "text_units": relation_context.get("text_units") + relation_context.get("text_units")
+        "entities": deduplicate_by_key(entity_context.get("entities", []) + relation_context.get("entities", []), "entity_name"),
+        "hyperedges": deduplicate_by_key(entity_context.get("hyperedges", []) + relation_context.get("hyperedges", []), "entity_set"),
+        "text_units": deduplicate_by_key(entity_context.get("text_units", []) + relation_context.get("text_units", []), "content")
     }
 
     if query_param.only_need_context:
@@ -1433,7 +1435,6 @@ async def graph_query(
 {text_units_context}
 ```
 """
-        # 返回包含上下文字符串和结构化数据的字典
         contextJson = {
             "context": context_string,
             "entities": [
