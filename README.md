@@ -118,7 +118,7 @@ python examples/hyperrag_demo.py
 
 ### Or Run by Steps
 
-1. Prepare the data. You can download the dataset from Google Drive <a href="https://pan.baidu.com/s/1mrDJVpMW59gLtRRSXafXdw?pwd=w642">here</a>, or Baidu Cloud <b href="https://pan.baidu.com/s/1mrDJVpMW59gLtRRSXafXdw?pwd=w642">here</b>. Put the dataset in the root direction. Then run the following command to preprocess the data.
+1. Prepare the data. You can download the dataset from Google Drive <a href="https://drive.google.com/drive/folders/1JxXXUR4Jx-2IKn4VGpDeH4xb4-nYEWBx?usp=sharing">here</a>, or Baidu Cloud <a href="https://pan.baidu.com/s/1mrDJVpMW59gLtRRSXafXdw?pwd=w642">here</a>. Put the dataset in the root direction. Then run the following command to preprocess the data.
 
 ```bash
 python reproduce/Step_0.py
