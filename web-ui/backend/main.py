@@ -519,13 +519,17 @@ def get_or_create_hyperrag(database: str = None):
         Path(db_working_dir).mkdir(parents=True, exist_ok=True)
         
         main_logger.info(f"HyperRAG工作目录: {db_working_dir}")
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+            
+        embedding_dim = settings.get("embeddingDim")
         
         # 初始化 HyperRAG 实例
         hyperrag_instances[database] = HyperRAG(
             working_dir=db_working_dir,
             llm_model_func=get_hyperrag_llm_func,
             embedding_func=EmbeddingFunc(
-                embedding_dim=1536,  # text-embedding-3-small 的维度
+                embedding_dim=embedding_dim,  # text-embedding-3-small 的维度
                 max_token_size=8192,
                 func=get_hyperrag_embedding_func
             ),
