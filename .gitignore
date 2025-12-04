@@ -183,3 +183,4 @@ web-ui/backend/settings.json
 web-ui/backend/hyperrag_cache/
 web-ui/backend/uploads/
 web-ui/backend/files.db
+web-ui/backend/Hyper-RAG/
