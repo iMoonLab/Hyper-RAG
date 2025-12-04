@@ -14,8 +14,8 @@ const resources = {
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: localStorage.getItem('language') || 'en-US', // 从本地存储获取语言设置，默认中文
-  fallbackLng: 'en-US',
+  lng: localStorage.getItem('language') || 'zh-CN', // 从本地存储获取语言设置，默认中文
+  fallbackLng: 'zh-CN',
   interpolation: {
     escapeValue: false
   }

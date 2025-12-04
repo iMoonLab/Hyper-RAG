@@ -35,32 +35,32 @@ export const routers = [
         // permissionObj: true,
         element: <Graph />
       },
-      {
-        path: '/Hyper/DB',
-        name: 'HypergraphDB',
-        icon: <DatabaseOutlined />,
-        // permissionObj: true,
-        element: <HyperDB />
-      },
-      {
-        path: '/Hyper/files',
-        name: '文档解析',
-        icon: <FileAddOutlined />,
-        element: <Files />,
-      },
-      {
-        path: '/API',
-        name: 'API 文档',
-        icon: <ApiOutlined />,
-        element: <APIPage />,
-      },
-      {
-        path: '/Setting',
-        name: '系统设置',
-        icon: <SettingOutlined />,
-        // permissionObj: true,
-        element: <Setting />
-      },
+      // {
+      //   path: '/Hyper/DB',
+      //   name: 'HypergraphDB',
+      //   icon: <DatabaseOutlined />,
+      //   // permissionObj: true,
+      //   element: <HyperDB />
+      // },
+      // {
+      //   path: '/Hyper/files',
+      //   name: '文档解析',
+      //   icon: <FileAddOutlined />,
+      //   element: <Files />,
+      // },
+      // {
+      //   path: '/API',
+      //   name: 'API 文档',
+      //   icon: <ApiOutlined />,
+      //   element: <APIPage />,
+      // },
+      // {
+      //   path: '/Setting',
+      //   name: '系统设置',
+      //   icon: <SettingOutlined />,
+      //   // permissionObj: true,
+      //   element: <Setting />
+      // },
     ]
   },
   { path: '*', element: <NotFoundPage /> }

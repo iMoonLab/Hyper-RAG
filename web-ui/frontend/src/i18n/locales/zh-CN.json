@@ -215,6 +215,7 @@
   "retrieval": {
     "title": "检索结果可视化",
     "mode": "模式",
+    "hyperedge":"超边",
     "hyperedge_count": "超边数量",
     "edge_count": "边数量",
     "chart_load_failed": "图表加载失败",

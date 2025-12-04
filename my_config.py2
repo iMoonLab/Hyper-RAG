@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+
+LLM_BASE_URL = "https://api.chatanywhere.tech/v1"
+LLM_API_KEY = "sk-NNtP76kvMHLJfTydd76eCnvjRVIKOjQYvASioljZKVv78M5G"
+LLM_MODEL = "gpt-4o-mini"
+
+EMB_BASE_URL = "https://api.chatanywhere.tech/v1"
+EMB_API_KEY = "sk-NNtP76kvMHLJfTydd76eCnvjRVIKOjQYvASioljZKVv78M5G"
+EMB_MODEL = "text-embedding-3-small"
+EMB_DIM = 1536

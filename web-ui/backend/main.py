@@ -13,6 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List
 from io import StringIO
+import traceback
 
 # 添加 HyperRAG 相关导入
 # 若尚不可导入，则向上逐级查找含有 hyperrag 包的目录，并把“其父目录”加到 sys.path
@@ -439,6 +440,10 @@ async def get_hyperrag_llm_func(prompt, system_prompt=None, history_messages=[],
         base_url = settings.get("baseUrl")
         
         main_logger.info(f"使用模型: {model_name}, API地址: {base_url}")
+
+        call_params = {}
+        if "qwen" in model_name.lower():
+            call_params["extra_body"] = {"enable_thinking": False}
         
         response = await openai_complete_if_cache(
             model_name,
@@ -447,6 +452,7 @@ async def get_hyperrag_llm_func(prompt, system_prompt=None, history_messages=[],
             history_messages=history_messages,
             api_key=api_key,
             base_url=base_url,
+            **call_params,
             **kwargs,
         )
         
@@ -640,6 +646,7 @@ async def query_hyperrag(query: QueryModel):
         }
         
     except Exception as e:
+        traceback.print_exc()
         return {"success": False, "message": f"Query failed: {str(e)}"}
 
 @app.get("/hyperrag/status")
@@ -948,6 +955,7 @@ class ConnectionManager:
             self.disable_logging_redirect()
 
     def enable_logging_redirect(self):
+        # return
         """启用日志重定向"""
         if not self.logging_enabled:
             self.original_stdout = sys.stdout

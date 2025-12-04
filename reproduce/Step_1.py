@@ -23,6 +23,7 @@ async def llm_model_func(
         system_prompt=system_prompt,
         history_messages=history_messages,
         api_key=LLM_API_KEY,
+        extra_body={"enable_thinking": False},
         base_url=LLM_BASE_URL,
         **kwargs,
     )
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     WORKING_DIR.mkdir(parents=True, exist_ok=True)
     rag = HyperRAG(
         working_dir=WORKING_DIR,
+        embedding_batch_num=8,
         llm_model_func=llm_model_func,
         embedding_func=EmbeddingFunc(
             embedding_dim=EMB_DIM, max_token_size=8192, func=embedding_func

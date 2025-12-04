@@ -273,6 +273,7 @@ async def openai_embedding(
     model: str = "text-embedding-3-small",
     base_url: str = None,
     api_key: str = None,
+    dimensions: int = 1536,
 ) -> np.ndarray:
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
@@ -281,7 +282,7 @@ async def openai_embedding(
         AsyncOpenAI() if base_url is None else AsyncOpenAI(base_url=base_url)
     )
     response = await openai_async_client.embeddings.create(
-        model=model, input=texts, encoding_format="float"
+        model=model, input=texts, encoding_format="float", dimensions=dimensions
     )
     return np.array([dp.embedding for dp in response.data])
 

@@ -33,7 +33,7 @@ const GraphPage = () => {
   // 获取vertices分页加载
   const loadVertices = async (page = 1, append = false) => {
     setVerticesLoading(true);
-    const pageSize = 50;
+    const pageSize = 32768;
     const url = `${SERVER_URL}/db/vertices?database=${encodeURIComponent(storeGlobalUser.selectedDatabase)}&page=${page}&page_size=${pageSize}`;
     const res = await fetch(url);
     const data = await res.json();
@@ -142,13 +142,8 @@ const GraphPage = () => {
         gap: '16px'
       }}>
         <DatabaseOutlined style={{ fontSize: '48px', color: '#d9d9d9' }} />
-        <div>{t('graph.select_database_first')}</div>
-        <DatabaseSelector
-          mode="select"
-          showRefresh={true}
-          size="middle"
-          onChange={onDatabaseChange}
-        />
+        <Spin size="large" />
+        <div>正在加载数据库...</div>
       </div>
     );
   }
@@ -167,12 +162,7 @@ const GraphPage = () => {
         <DatabaseOutlined style={{ fontSize: '48px', color: '#d9d9d9' }} />
         <div>{t('graph.no_entity_data')}</div>
         <div style={{ color: '#999' }}>{t('graph.database_label')}: {storeGlobalUser.selectedDatabase}</div>
-        <DatabaseSelector
-          mode="select"
-          showRefresh={true}
-          size="middle"
-          onChange={onDatabaseChange}
-        />
+        <div style={{ color: 'red', marginTop: 10 }}>当前数据库为空或加载失败，请检查后端数据。</div>
       </div>
     );
   }
@@ -180,13 +170,13 @@ const GraphPage = () => {
   return (
     <>
       <div className='m-4' style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span>{t('graph.hypergraph_database')}</span>
+        {/* <span>{t('graph.hypergraph_database')}</span>
         <DatabaseSelector
           mode="compact"
           showRefresh={false}
           size="middle"
           onChange={onDatabaseChange}
-        />
+        /> */}
 
         <span className='ml-4'>{t('graph.select_entity')}</span>
         <Select
@@ -204,8 +194,11 @@ const GraphPage = () => {
               }
             }
           }}
+          filterOption={(input, option) =>
+            (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+          }
         >
-          {verticesList.map(vertexKey => (
+          {(Array.isArray(verticesList) ? verticesList : []).map(vertexKey => (
             <Select.Option key={vertexKey} value={vertexKey}>
               {vertexKey}
             </Select.Option>

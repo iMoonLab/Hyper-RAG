@@ -50,7 +50,20 @@ export default defineConfig(({ mode }) => ({
     }
   },
   server: {
-    proxy: proxy[mode]
+    allowedHosts: true, 
+    port: 5050,
+    proxy: {
+      '/hyperrag': 'http://127.0.0.1:8090',
+      '/db': 'http://127.0.0.1:8090',
+      '/files': 'http://127.0.0.1:8090',
+      '/settings': 'http://127.0.0.1:8090',
+      '/process_message': 'http://127.0.0.1:8090',
+      '/databases': 'http://127.0.0.1:8090',
+      '/ws': {
+        target: 'ws://127.0.0.1:8090',
+        ws: true
+      }
+    }
   },
   build: {
     // 打包出map文件

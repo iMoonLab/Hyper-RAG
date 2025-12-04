@@ -26,7 +26,7 @@ const RetrievalInfo = ({
   if (!entities.length && !hyperedges.length && !textUnits.length) {
     return null
   }
-  const edgesName = mode === 'hyper' ? t('retrieval.hyperedge_count') : t('retrieval.edge_count')
+  const edgesName = mode === 'hyper' ? t('retrieval.hyperedge') : t('retrieval.edge_count')
 
   const renderEntityCard = (entity, index) => (
     <Card

@@ -25,6 +25,7 @@ async def llm_model_func(
         history_messages=history_messages,
         api_key=LLM_API_KEY,
         base_url=LLM_BASE_URL,
+        extra_body={"enable_thinking": False},
         **kwargs,
     )
 
@@ -81,7 +82,7 @@ def run_queries_and_save_to_json(
 
 
 if __name__ == "__main__":
-    data_name = "mix"
+    data_name = "test"
     question_stage = 2
     WORKING_DIR = Path("caches") / data_name
     # input questions
@@ -93,6 +94,7 @@ if __name__ == "__main__":
     rag = HyperRAG(
         working_dir=WORKING_DIR,
         llm_model_func=llm_model_func,
+        embedding_batch_num=8,
         embedding_func=EmbeddingFunc(
             embedding_dim=EMB_DIM, max_token_size=8192, func=embedding_func
         ),

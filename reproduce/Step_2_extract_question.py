@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from my_config import LLM_API_KEY, LLM_BASE_URL
 
 # suggest using more powerful LLMs to extract questions like gpt-4o
-LLM_MODEL = "gpt-4o"
+LLM_MODEL = "qwen3-30b-a3b"
 # LLM_MODEL = "gpt-4o-mini"
 
 
@@ -26,7 +26,7 @@ def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs) ->
     messages.append({"role": "user", "content": prompt})
 
     response = openai_client.chat.completions.create(
-        model=LLM_MODEL, messages=messages, **kwargs
+        model=LLM_MODEL, messages=messages,extra_body={"enable_thinking": False}, **kwargs
     )
     return response.choices[0].message.content
 
@@ -107,7 +107,7 @@ encoding = tiktoken.encoding_for_model("gpt-4o")
 
 
 if __name__ == "__main__":
-    data_name = "mix"
+    data_name = "test"
     question_stage  = 2
     WORKING_DIR = Path("caches") / data_name
     # number of question stages to extract, which can be 1, 2, or 3

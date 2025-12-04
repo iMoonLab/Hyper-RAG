@@ -1,10 +1,11 @@
 services:
   # 后端服务
   backend:
-    image: yuxizhe/hyper-rag-backend:latest
+    build: ./backend
     container_name: hyperrag-backend
     volumes:
-      - hyperrag_cache_data:/app/hyperrag_cache
+      - ./backend/hyperrag_cache:/app/hyperrag_cache
+      - ./backend/settings.json:/app/settings.json
       - ../hyperrag:/app/hyperrag:ro
     networks:
       - hyperrag-network
@@ -14,7 +15,7 @@ services:
 
   # 前端服务
   frontend:
-    image: yuxizhe/hyper-rag-frontend:latest
+    build: ./frontend
     container_name: hyperrag-frontend
     depends_on:
       - backend
@@ -45,5 +46,5 @@ networks:
   hyperrag-network:
     driver: bridge
 
-volumes:
-  hyperrag_cache_data:
+# volumes:
+#   hyperrag_cache_data:

@@ -625,7 +625,12 @@ async def _build_entity_query_context(
 ):
     results = await entities_vdb.query(query, top_k=query_param.top_k)
     if not len(results):
-        return None
+        return {
+            "context": "",
+            "entities": [],
+            "hyperedges": [],
+            "text_units": []
+        }
     node_datas = await asyncio.gather(
         *[knowledge_hypergraph_inst.get_vertex(r["entity_name"]) for r in results]
     )
@@ -870,7 +875,12 @@ async def _build_relation_query_context(
     results = await relationships_vdb.query(keywords, top_k=query_param.top_k)
 
     if not len(results):
-        return None
+        return {
+            "context": "",
+            "entities": [],
+            "hyperedges": [],
+            "text_units": []
+        }
 
     edge_datas = await asyncio.gather(
         *[knowledge_hypergraph_inst.get_hyperedge(r['id_set']) for r in results]
@@ -1068,8 +1078,8 @@ async def hyper_query(
     query_param: QueryParam,
     global_config: dict,
 ):
-    entity_context = None
-    relation_context = None
+    entity_context = {}
+    relation_context = {}
     use_model_func = global_config["llm_model_func"]
 
     kw_prompt_temp = PROMPTS["keywords_extraction"]
@@ -1142,7 +1152,7 @@ async def hyper_query(
 
     if query_param.only_need_context:
         return context
-    if context is None:
+    if context is None or not context.strip():
         return PROMPTS["fail_response"]
     define_str = ""
     if entity_keywords or relation_keywords:
