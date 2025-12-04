@@ -184,3 +184,6 @@ web-ui/backend/hyperrag_cache/
 web-ui/backend/uploads/
 web-ui/backend/files.db
 web-ui/backend/Hyper-RAG/
+
+知识库文档/
+raw_markdowns/
