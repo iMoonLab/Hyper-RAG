@@ -156,9 +156,6 @@ We provide a web-based visualization tool for hypergraphs and lightweight Hyper-
 ![vis-qa](./assets/vis-QA.png)
 ![vis-hg](./assets/vis-hg.png)
 
-### Storage architecture note
-Both the core library and the web UI access hypergraph storage. See [docs/storage-architecture.md](docs/storage-architecture.md) for how the current HypergraphDB integration is layered and how to swap in alternative backends such as TuGraph.
-
 ## :whale: Docker Deployment
 
 We provide Docker support for easy deployment of the Hyper-RAG Web UI. Docker deployment includes both frontend and backend services with optional Nginx reverse proxy.
