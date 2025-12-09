@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Union, cast, List, Set, Tuple, Optional, Dict
 import numpy as np
 from nano_vectordb import NanoVectorDB
-from hyperdb import HypergraphDB
+from .hypergraph_backend import get_hypergraph_driver, HypergraphDriver
 from .utils import load_json, logger, write_json
 from .base import (
     BaseKVStorage,
@@ -116,35 +116,23 @@ class NanoVectorDBStorage(BaseVectorStorage):
 
 @dataclass
 class HypergraphStorage(BaseHypergraphStorage):
-
-    @staticmethod
-    def load_hypergraph(file_name) -> HypergraphDB:
-        if os.path.exists(file_name):
-            pre_hypergraph = HypergraphDB()
-            pre_hypergraph.load(file_name)
-            return pre_hypergraph
-        return None
-
-    @staticmethod
-    def write_hypergraph(hypergraph: HypergraphDB, file_name):
-        logger.info(
-            f"Writing hypergraph with {hypergraph.num_v} vertices, {hypergraph.num_e} hyperedges"
-        )
-        hypergraph.save(file_name)
+    backend: str = "hypergraph-db"
 
     def __post_init__(self):
-        self._hgdb_file = os.path.join(
-            self.global_config["working_dir"], f"hypergraph_{self.namespace}.hgdb"
-        )
-        preloaded_hypergraph = HypergraphStorage.load_hypergraph(self._hgdb_file)
-        if preloaded_hypergraph is not None:
-            logger.info(
-                f"Loaded hypergraph from {self._hgdb_file} with {preloaded_hypergraph.num_v} vertices, {preloaded_hypergraph.num_e} hyperedges"
+        self._driver: HypergraphDriver = get_hypergraph_driver(self.backend)
+        self._hgdb_file = None
+        if self._driver.requires_local_file:
+            self._hgdb_file = os.path.join(
+                self.global_config["working_dir"], f"hypergraph_{self.namespace}.hgdb"
             )
-        self._hg = preloaded_hypergraph or HypergraphDB()
+        self._hg = self._driver.load_or_create(self._hgdb_file or "")
 
     async def index_done_callback(self):
-        HypergraphStorage.write_hypergraph(self._hg, self._hgdb_file)
+        logger.info(
+            f"Writing hypergraph with {await self.get_num_of_vertices()} vertices, {await self.get_num_of_hyperedges()} hyperedges"
+        )
+        if self._driver.requires_local_file and self._hgdb_file:
+            self._driver.save(self._hg, self._hgdb_file)
 
     async def has_vertex(self, v_id: Any) -> bool:
         return self._hg.has_v(v_id)
