@@ -1,4 +1,4 @@
-/my_config.py
+/my_config.py*
 .DS_Store
 caches/
 datasets/
