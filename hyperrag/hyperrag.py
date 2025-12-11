@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from functools import partial
 from typing import Type, cast
+import json
 
 from .operate import (
     chunking_by_token_size,
@@ -13,6 +14,7 @@ from .operate import (
     naive_query,
     graph_query,
     llm_query,
+    hyper_query_stream,
 )
 from .llm import (
     gpt_4o_mini_complete,
@@ -83,6 +85,7 @@ class HyperRAG:
 
     # LLM
     llm_model_func: callable = gpt_4o_mini_complete  # hf_model_complete#
+    llm_model_stream_func: callable = None
     # llm_model_name: str = "meta-llama/Llama-3.2-1B-Instruct"  #'meta-llama/Llama-3.2-1B'#'google/gemma-2-2b-it'
     llm_model_name: str = ""
     llm_model_max_token_size: int = 32768
@@ -165,6 +168,12 @@ class HyperRAG:
                 **self.llm_model_kwargs,
             )
         )
+        
+        if self.llm_model_stream_func:
+            self.llm_model_stream_func = partial(
+                self.llm_model_stream_func,
+                **self.llm_model_kwargs
+            )
 
     def insert(self, string_or_strings):
         loop = always_get_an_event_loop()
@@ -303,6 +312,21 @@ class HyperRAG:
             raise ValueError(f"Unknown mode {param.mode}")
         await self._query_done()
         return response
+    
+    async def aquery_stream(self, query: str, param: QueryParam = QueryParam()):
+        if param.mode == "hyper":
+            async for chunk in hyper_query_stream(
+                query,
+                self.chunk_entity_relation_hypergraph,
+                self.entities_vdb,
+                self.relationships_vdb,
+                self.text_chunks,
+                param,
+                asdict(self),
+            ):
+                yield chunk
+        else:
+            yield json.dumps({"type": "chunk", "content": "当前模式暂不支持流式输出"}) + "\n"
 
     async def _query_done(self):
         tasks = []

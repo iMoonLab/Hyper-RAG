@@ -104,7 +104,7 @@ def getFrequentVertices(database=None, page=None, page_size=None):
             else:
                 frequent_vertices[v] = 1
     
-    frequent_vertices = [v for v, count in frequent_vertices.items() if count >= 2]
+    frequent_vertices = [v for v, count in frequent_vertices.items()]
 
     # 如果没有分页参数，返回所有数据
     if page is None or page_size is None:

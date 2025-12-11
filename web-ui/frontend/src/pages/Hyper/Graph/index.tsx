@@ -34,7 +34,7 @@ const GraphPage = () => {
   const loadVertices = async (page = 1, append = false) => {
     setVerticesLoading(true);
     const pageSize = 32768;
-    const url = `${SERVER_URL}/db/vertices?database=${encodeURIComponent(storeGlobalUser.selectedDatabase)}&page=${page}&page_size=${pageSize}`;
+    const url = `${SERVER_URL}/db/vertices?database=${encodeURIComponent(storeGlobalUser.selectedDatabase)}&page=${page}`;
     const res = await fetch(url);
     const data = await res.json();
     const list = data.data || data;

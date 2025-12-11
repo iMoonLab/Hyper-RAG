@@ -1186,6 +1186,88 @@ async def hyper_query(
         response = contextJson
     return response 
 
+async def hyper_query_stream(
+    query,
+    knowledge_hypergraph_inst: BaseHypergraphStorage,
+    entities_vdb: BaseVectorStorage,
+    relationships_vdb: BaseVectorStorage,
+    text_chunks_db: BaseKVStorage[TextChunkSchema],
+    query_param: QueryParam,
+    global_config: dict,
+):
+    entity_context = {}
+    relation_context = {}
+    use_model_func = global_config["llm_model_func"]
+    
+    kw_prompt_temp = PROMPTS["keywords_extraction"]
+    kw_prompt = kw_prompt_temp.format(query=query)
+    result = await use_model_func(kw_prompt)
+    print(f"\n================ 关键词提取侦查 ================", flush=True)
+    print(f"1. 用户问题: {query}", flush=True)
+    print(f"2. LLM 返回的原始 JSON:\n{result}", flush=True)
+    
+    try:
+        keywords_data = json.loads(result)
+        entity_keywords = keywords_data.get("low_level_keywords", [])
+        relation_keywords = keywords_data.get("high_level_keywords", [])
+        entity_keywords = ", ".join(entity_keywords)
+        relation_keywords = ", ".join(relation_keywords)
+    except json.JSONDecodeError:
+        entity_keywords = ""
+        relation_keywords = ""
+
+    if entity_keywords:
+        entity_context = await _build_entity_query_context(
+            entity_keywords, knowledge_hypergraph_inst, entities_vdb, text_chunks_db, query_param
+        ) or {}
+
+    if relation_keywords:
+        relation_context = await _build_relation_query_context(
+            relation_keywords, knowledge_hypergraph_inst, entities_vdb, relationships_vdb, text_chunks_db, query_param
+        ) or {}
+
+    context = combine_contexts(relation_context.get("context", ""), entity_context.get("context", ""))
+
+    graph_data = {
+        "entities": deduplicate_by_key(entity_context.get("entities", []) + relation_context.get("entities", []), "entity_name"),
+        "hyperedges": deduplicate_by_key(entity_context.get("hyperedges", []) + relation_context.get("hyperedges", []), "entity_set"),
+        "text_units": deduplicate_by_key(entity_context.get("text_units", []) + relation_context.get("text_units", []), "content")
+    }
+
+    yield json.dumps({
+        "type": "data", 
+        "data": graph_data
+    }, ensure_ascii=False) + "\n"
+
+    if context is None or not context.strip():
+        yield json.dumps({
+            "type": "chunk", 
+            "content": PROMPTS["fail_response"]
+        }, ensure_ascii=False) + "\n"
+        return
+
+    define_str = ""
+    if entity_keywords or relation_keywords:
+        define_str = PROMPTS["rag_define"].format(ll_keywords=entity_keywords, hl_keywords=relation_keywords)
+    
+    sys_prompt = PROMPTS["rag_response"].format(
+        context_data=context, response_type=query_param.response_type
+    )
+
+    stream_func = global_config.get("llm_model_stream_func")
+    
+    if not stream_func:
+        full_response = await use_model_func(query + define_str, system_prompt=sys_prompt)
+        yield json.dumps({"type": "chunk", "content": full_response}, ensure_ascii=False) + "\n"
+    else:
+        async for chunk in stream_func(query + define_str, system_prompt=sys_prompt):
+            clean_chunk = chunk.replace("<system>", "").replace("</system>", "") 
+            
+            # 发送文本块
+            yield json.dumps({
+                "type": "chunk", 
+                "content": clean_chunk
+            }, ensure_ascii=False) + "\n"
 
 async def hyper_query_lite(
     query,

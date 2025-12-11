@@ -234,6 +234,40 @@ return '用户'
         )
     }
 
+    const readStream = async (reader, onChunk) => {
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            buffer += decoder.decode(value, { stream: true })
+
+            const lines = buffer.split('\n')
+
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+                if (line.trim()) {
+                    try {
+                        const data = JSON.parse(line)
+                        onChunk(data)
+                    } catch (e) {
+                        console.error('JSON parse error:', e)
+                    }
+                }
+            }
+        }
+        if (buffer.trim()) {
+            try {
+                const data = JSON.parse(buffer)
+                onChunk(data)
+            } catch (e) { console.error('Final JSON parse error:', e) }
+        }
+    }
+
     // 单模式查询函数
     const querySingleMode = async (question, mode) => {
         const response = await fetch(`${SERVER_URL}/hyperrag/query`, {
@@ -245,7 +279,7 @@ return '用户'
                 question: question,
                 mode: mode,
                 top_k: 60,
-                max_token_for_text_unit: 1600,
+                max_token_for_text_unit: 12000,
                 max_token_for_entity_context: 300,
                 max_token_for_relation_context: 1600,
                 only_need_context: false,
@@ -258,7 +292,41 @@ return '用户'
             throw new Error(`Network error: ${response.status}`)
         }
 
-        return response.json()
+        const reader = response.body.getReader()
+        let accumulatedResponse = ""
+        let graphData = {} // 用来存图谱数据
+
+        await readStream(reader, (data) => {
+
+            if (data.type === 'data') {
+                console.log('收到图谱数据:', data.data)
+                graphData = data.data
+
+                updateLastMessage('', {
+                    entities: graphData.entities || [],
+                    hyperedges: graphData.hyperedges || [],
+                    text_units: graphData.text_units || [],
+                    isCompare: false
+                })
+            }
+            else if (data.type === 'chunk') {
+                const chunk = data.content || ""
+                accumulatedResponse += chunk
+
+                updateLastMessage(accumulatedResponse, {
+                    entities: graphData.entities || [],
+                    hyperedges: graphData.hyperedges || [],
+                    text_units: graphData.text_units || [],
+                    isCompare: false
+                })
+            }
+        })
+
+        return {
+            success: true,
+            response: accumulatedResponse,
+            ...graphData
+        }
     }
 
     const handleSubmit = async () => {

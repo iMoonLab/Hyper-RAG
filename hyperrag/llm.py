@@ -503,6 +503,40 @@ class MultiModel:
         )
 
         return await next_model.gen_func(**args)
+    
+
+async def openai_stream(
+    model, 
+    prompt, 
+    system_prompt=None, 
+    history_messages=[], 
+    api_key=None, 
+    base_url=None, 
+    **kwargs
+):
+    client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.extend(history_messages)
+    messages.append({"role": "user", "content": prompt})
+
+    try:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True, 
+            **kwargs
+        )
+
+        async for chunk in response:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+    except Exception as e:
+        print(f"Stream Error: {e}")
+        yield f"[Error: {str(e)}]"
 
 
 if __name__ == "__main__":

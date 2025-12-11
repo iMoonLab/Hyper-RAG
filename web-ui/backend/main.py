@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from typing import List
 from io import StringIO
 import traceback
+from fastapi.responses import StreamingResponse
 
 # 添加 HyperRAG 相关导入
 # 若尚不可导入，则向上逐级查找含有 hyperrag 包的目录，并把“其父目录”加到 sys.path
@@ -26,7 +27,7 @@ if importlib.util.find_spec("hyperrag") is None:
 try:
     from hyperrag import HyperRAG, QueryParam
     from hyperrag.utils import EmbeddingFunc
-    from hyperrag.llm import openai_embedding, openai_complete_if_cache
+    from hyperrag.llm import openai_embedding, openai_complete_if_cache, openai_stream
     HYPERRAG_AVAILABLE = True
 except ImportError as e:
     print(f"HyperRAG not available: {e}")
@@ -463,6 +464,39 @@ async def get_hyperrag_llm_func(prompt, system_prompt=None, history_messages=[],
         main_logger.error(f"LLM调用失败: {str(e)}")
         raise
 
+
+async def get_hyperrag_llm_stream_func(prompt, system_prompt=None, history_messages=[], **kwargs):
+    """
+    HyperRAG 专用的流式 LLM 函数
+    """
+    try:
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+        
+        model_name = settings.get("modelName", "gpt-4o-mini")
+        api_key = settings.get("apiKey")
+        base_url = settings.get("baseUrl")
+        
+        extra_args = {}
+        if model_name and "qwen" in model_name.lower():
+            extra_args["extra_body"] = {"enable_thinking": False}
+            
+        async for chunk in openai_stream(
+            model_name,
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+            api_key=api_key,
+            base_url=base_url,
+            **extra_args,
+            **kwargs
+        ):
+            yield chunk
+        
+    except Exception as e:
+        main_logger.error(f"LLM流式调用失败: {str(e)}")
+        yield f"Error: {str(e)}"
+
 async def get_hyperrag_embedding_func(texts: list[str]) -> np.ndarray:
     """
     HyperRAG 专用的嵌入函数
@@ -534,6 +568,7 @@ def get_or_create_hyperrag(database: str = None):
         hyperrag_instances[database] = HyperRAG(
             working_dir=db_working_dir,
             llm_model_func=get_hyperrag_llm_func,
+            llm_model_stream_func=get_hyperrag_llm_stream_func, 
             embedding_func=EmbeddingFunc(
                 embedding_dim=embedding_dim,  # text-embedding-3-small 的维度
                 max_token_size=8192,
@@ -610,7 +645,7 @@ async def insert_document(doc: DocumentModel):
 @app.post("/hyperrag/query")
 async def query_hyperrag(query: QueryModel):
     """
-    使用指定数据库的 HyperRAG 进行问答查询
+    流式查询接口 (NDJSON 格式)
     """
     if not HYPERRAG_AVAILABLE:
         return {"success": False, "message": "HyperRAG is not available"}
@@ -618,7 +653,6 @@ async def query_hyperrag(query: QueryModel):
     try:
         rag = get_or_create_hyperrag(query.database)
         
-        # 创建查询参数
         param = QueryParam(
             mode=query.mode,
             top_k=query.top_k,
@@ -630,20 +664,10 @@ async def query_hyperrag(query: QueryModel):
             return_type='json'
         )
         
-        # 执行查询
-        result = await rag.aquery(query.question, param)
-        
-        # 处理结果格式
-        return {
-            "success": True,
-            "response": result.get("response", ""),
-            "entities": result.get("entities", []),
-            "hyperedges": result.get("hyperedges", []),
-            "text_units": result.get("text_units", []),
-            "mode": query.mode,
-            "question": query.question,
-            "database": query.database or "default"
-        }
+        return StreamingResponse(
+            rag.aquery_stream(query.question, param),
+            media_type="application/x-ndjson"
+        )
         
     except Exception as e:
         traceback.print_exc()
