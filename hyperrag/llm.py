@@ -73,6 +73,68 @@ async def openai_complete_if_cache(
         )
     return response.choices[0].message.content
 
+async def openai_complete_stream_if_cache(
+    model,
+    prompt,
+    system_prompt=None,
+    history_messages=[],
+    base_url=None,
+    api_key=None,
+    chunk_size: int = 32,
+    **kwargs,
+):
+    """
+    OpenAI-compatible 流式输出（async generator）
+    - 命中缓存：按 chunk_size 分块 yield
+    - 不命中：stream=True 逐 token yield，并在结束后写缓存
+    """
+    if api_key:
+        os.environ["OPENAI_API_KEY"] = api_key
+
+    openai_async_client = (
+        AsyncOpenAI() if base_url is None else AsyncOpenAI(base_url=base_url)
+    )
+
+    hashing_kv: BaseKVStorage = kwargs.pop("hashing_kv", None)
+
+    messages = []
+    if system_prompt is not None:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.extend(history_messages)
+    messages.append({"role": "user", "content": prompt})
+
+    # 1) cache 命中：直接回放
+    if hashing_kv is not None:
+        args_hash = compute_args_hash(model, messages)
+        if_cache_return = await hashing_kv.get_by_id(args_hash)
+        if if_cache_return is not None:
+            cached = if_cache_return["return"] or ""
+            # 按块 yield，避免一次性返回
+            for i in range(0, len(cached), chunk_size):
+                yield cached[i:i + chunk_size]
+            return
+
+    # 2) cache 未命中：真实 stream
+    full_text = []
+    stream = await openai_async_client.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=True,
+        **kwargs,
+    )
+
+    async for event in stream:
+        delta = None
+        if event.choices:
+            delta = getattr(event.choices[0].delta, "content", None)
+        if delta:
+            full_text.append(delta)
+            yield delta
+
+    # 3) 写入 cache
+    if hashing_kv is not None:
+        text = "".join(full_text)
+        await hashing_kv.upsert({args_hash: {"return": text, "model": model}})
 
 @retry(
     stop=stop_after_attempt(3),

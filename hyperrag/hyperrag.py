@@ -33,6 +33,7 @@ from .utils import (
     convert_response_to_json,
     logger,
     set_logger,
+    limit_async_gen_call
 )
 from .base import (
     BaseKVStorage,
@@ -41,6 +42,8 @@ from .base import (
     QueryParam,
     BaseHypergraphStorage,
 )
+
+from .operate import hyper_query_stream, hyper_query_lite_stream, naive_query_stream, llm_query_stream
 
 
 def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
@@ -60,7 +63,7 @@ class HyperRAG:
     working_dir: str = field(
         default_factory=lambda: f"./HyperRAG_cache_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}"
     )
-    print(working_dir)
+    # print(working_dir)
 
     current_log_level = logger.level
     log_level: str = field(default=current_log_level)
@@ -78,7 +81,7 @@ class HyperRAG:
     relation_keywords_to_max_tokens: int = 100
 
     embedding_func: EmbeddingFunc = field(default_factory=lambda: openai_embedding)
-    embedding_batch_num: int = 32
+    embedding_batch_num: int = 8
     embedding_func_max_async: int = 16
 
     # LLM
@@ -88,6 +91,8 @@ class HyperRAG:
     llm_model_max_token_size: int = 32768
     llm_model_max_async: int = 16
     llm_model_kwargs: dict = field(default_factory=dict)
+
+    llm_model_stream_func: callable = None
 
     # storage
     key_string_value_json_storage_cls: Type[BaseKVStorage] = JsonKVStorage
@@ -165,6 +170,16 @@ class HyperRAG:
                 **self.llm_model_kwargs,
             )
         )
+
+        if getattr(self, "llm_model_stream_func", None) is not None:
+            # 先把 hashing_kv 注入到 stream func（供 openai_complete_stream_if_cache 使用）
+            self.llm_model_stream_func = limit_async_gen_call(self.llm_model_max_async)(
+                partial(
+                    self.llm_model_stream_func,
+                    hashing_kv=self.llm_response_cache,
+                    **self.llm_model_kwargs,
+                )
+            )
 
     def insert(self, string_or_strings):
         loop = always_get_an_event_loop()
@@ -303,6 +318,61 @@ class HyperRAG:
             raise ValueError(f"Unknown mode {param.mode}")
         await self._query_done()
         return response
+
+    async def astream_query(self, query: str, param: QueryParam = QueryParam()):
+        """
+        流式查询：返回 async generator（逐 token / 逐块）
+        依赖 self.llm_model_stream_func，不提供则抛错。
+        """
+        if self.llm_model_stream_func is None:
+            raise AttributeError("llm_model_stream_func is not set, streaming is unavailable.")
+
+        # 把 stream func 放进 global_config
+        cfg = asdict(self)
+        cfg["llm_model_stream_func"] = self.llm_model_stream_func
+
+        if param.mode == "hyper":
+            async for tok in hyper_query_stream(
+                    query,
+                    self.chunk_entity_relation_hypergraph,
+                    self.entities_vdb,
+                    self.relationships_vdb,
+                    self.text_chunks,
+                    param,
+                    cfg,
+            ):
+                yield tok
+
+        elif param.mode == "hyper-lite":
+            async for tok in hyper_query_lite_stream(
+                    query,
+                    self.chunk_entity_relation_hypergraph,
+                    self.entities_vdb,
+                    self.text_chunks,
+                    param,
+                    cfg,
+            ):
+                yield tok
+
+        elif param.mode == "naive":
+            async for tok in naive_query_stream(
+                    query,
+                    self.chunks_vdb,
+                    self.text_chunks,
+                    param,
+                    cfg,
+            ):
+                yield tok
+
+        elif param.mode == "llm":
+            async for tok in llm_query_stream(query, param, cfg):
+                yield tok
+
+        else:
+            raise ValueError(f"Unknown mode {param.mode}")
+
+        await self._query_done()
+
 
     async def _query_done(self):
         tasks = []
