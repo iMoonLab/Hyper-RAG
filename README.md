@@ -181,6 +181,25 @@ docker-compose up
 
 For comprehensive Docker deployment instructions, configuration options, troubleshooting, and production deployment guidelines, please refer to our detailed [Docker Deployment Guide](./web-ui/DOCKER.md).
 
+## :bulb: Simple Test Demo
+
+1. Run by steps
+```bash
+conda activate rag
+cd Hyper_RAG/reproduce
+python reproduce/Step_0.py
+python reproduce/Step_1.py
+
+cd Hyper-RAG
+python -m uvicorn service_api:app --app-dir . --host 0.0.0.0 --port 8000
+```
+2. Open `testHTML_light.html` in your web browser.
+3. Selecting the model (`hyper`,`hyper-lite`,`naive`) and whether to output in streaming mode
+
+<div align="center">
+  <img src="./assets/hyperrag-streaming.gif" alt="Efficiency analysis" width="80%" />
+</div>
+
 ## :checkered_flag: Evaluation
 In this work, we propose two evaluation strategys: the **selection-based** and **scoring-based** evaluation. 
 

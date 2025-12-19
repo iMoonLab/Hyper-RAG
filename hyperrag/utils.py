@@ -94,6 +94,29 @@ def limit_async_func_call(max_size: int, waitting_time: float = 0.0001):
 
     return final_decro
 
+def limit_async_gen_call(max_size: int):
+    """
+    限制“异步生成器（async generator）”并发数的装饰器。
+    适用于 stream 场景：func(*args, **kwargs) 返回一个 async generator，
+    不能对其 await，只能 async for 迭代。
+    """
+    sem = asyncio.Semaphore(max_size)
+
+    def final_decro(func):
+        @wraps(func)
+        async def gen_wrapper(*args, **kwargs):
+            await sem.acquire()
+            try:
+                agen = func(*args, **kwargs)  # 注意：这里不要 await
+                async for item in agen:
+                    yield item
+            finally:
+                sem.release()
+
+        return gen_wrapper
+
+    return final_decro
+
 
 def wrap_embedding_func_with_attrs(**kwargs):
     """Wrap a function with attributes"""
