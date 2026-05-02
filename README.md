@@ -12,12 +12,6 @@
   <img alt="Repository size" src="https://img.shields.io/github/repo-size/iMoonLab/Hyper-RAG?color=purple">
 
   <img alt="License" src="https://img.shields.io/github/license/iMoonLab/Hyper-RAG?color=purple">
-
-  <!-- <img alt="Github issues" src="https://img.shields.io/github/issues/iMoonLab/Hyper-RAG?color=purple" /> -->
-
-  <!-- <img alt="Github forks" src="https://img.shields.io/github/forks/iMoonLab/Hyper-RAG?color=purple" /> -->
-
-  <img alt="Github stars" src="https://img.shields.io/github/stars/iMoonLab/Hyper-RAG?color=purple" />
   <a href="https://www.nature.com/articles/s41467-026-71411-1"><img alt="Nature Communications" src="https://img.shields.io/badge/Nature%20Communications-2026-E63946?logo=nature&logoColor=white"></a>
   <a href="https://doi.org/10.1038/s41467-026-71411-1"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.1038%2Fs41467--026--71411--1-1F6FEB"></a>
 </p>
