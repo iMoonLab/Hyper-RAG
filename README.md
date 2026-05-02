@@ -18,6 +18,8 @@
   <!-- <img alt="Github forks" src="https://img.shields.io/github/forks/iMoonLab/Hyper-RAG?color=purple" /> -->
 
   <img alt="Github stars" src="https://img.shields.io/github/stars/iMoonLab/Hyper-RAG?color=purple" />
+  <a href="https://www.nature.com/articles/s41467-026-71411-1"><img alt="Nature Communications" src="https://img.shields.io/badge/Nature%20Communications-2026-E63946?logo=nature&logoColor=white"></a>
+  <a href="https://doi.org/10.1038/s41467-026-71411-1"><img alt="DOI" src="https://img.shields.io/badge/DOI-10.1038%2Fs41467--026--71411--1-1F6FEB"></a>
 </p>
 
 <p align="center">
@@ -38,7 +40,7 @@
   <img src="./assets/many_llms_all.svg" alt="Overall Performance" width="100%" />
 </div>
 
-We show that Hyper-RAG is a powerful RAG that can enhance the performance of various LLMs and outperform other SOTA RAG methods in the NeurologyCorp dataset. **Our paper is available at <a href="https://arxiv.org/abs/2504.08758">here</a>**.
+We show that Hyper-RAG is a powerful RAG that can enhance the performance of various LLMs and outperform other SOTA RAG methods in the NeurologyCorp dataset. **Our paper has been published in <a href="https://www.nature.com/articles/s41467-026-71411-1"><i>Nature Communications</i></a> (2026)**.
 
 ## :dart: About
 
@@ -253,14 +255,13 @@ This repo benefits from [LightRAG](https://github.com/HKUDS/LightRAG) and [Hyper
 
 ## 🌟Citation
 ```
-@misc{feng2025hyperrag,
-      title={Hyper-RAG: Combating LLM Hallucinations using Hypergraph-Driven Retrieval-Augmented Generation}, 
-      author={Yifan Feng and Hao Hu and Xingliang Hou and Shiquan Liu and Shihui Ying and Shaoyi Du and Han Hu and Yue Gao},
-      year={2025},
-      eprint={2504.08758},
-      archivePrefix={arXiv},
-      primaryClass={cs.IR},
-      url={https://arxiv.org/abs/2504.08758}, 
+@article{feng2026hyperrag,
+      title   = {Hyper-RAG: combating LLM hallucinations using hypergraph-driven retrieval-augmented generation},
+      author  = {Feng, Yifan and Hu, Hao and Ying, Shihui and Hou, Xingliang and Liu, Shiquan and Yang, Mingyuan and Li, Junchang and Du, Shaoyi and Zheng, Nanning and Hu, Han and Gao, Yue},
+      journal = {Nature Communications},
+      year    = {2026},
+      doi     = {10.1038/s41467-026-71411-1},
+      url     = {https://www.nature.com/articles/s41467-026-71411-1}
 }
 ```
 
