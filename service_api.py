@@ -2,6 +2,11 @@ from __future__ import annotations
 
 import os
 import sys
+
+# 在后续可能加载 NumPy / 向量库之前为 Windows 会话设置 OpenMP 重复初始化容忍（可选权宜）。
+if sys.platform == "win32":
+    os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 import time
 import logging
 from pathlib import Path

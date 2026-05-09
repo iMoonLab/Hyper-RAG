@@ -1,7 +1,9 @@
+import argparse
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(_ROOT))
 
 import re
 import json
@@ -9,6 +11,8 @@ import numpy as np
 from tqdm import tqdm
 from openai import OpenAI
 from my_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+
+from reproduce.pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 
 def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs) -> str:
@@ -34,9 +38,10 @@ def extract_queries_and_answers(file_path):
     return queries, answers
 
 
-def extarct_queries_and_refs(file_path: Path):
-    ref_file_path = file_path.with_stem(f"{file_path.stem}_ref")
-    with open(file_path, "r", encoding="utf-8") as file:
+def extract_queries_and_refs(question_json: Path):
+    """与 Step_2 一致：questions/<n>_stage.json 与同级 <n>_stage_ref.json。"""
+    ref_file_path = question_json.with_name(f"{question_json.stem}_ref.json")
+    with open(question_json, "r", encoding="utf-8") as file:
         queries = json.load(file)
     with open(ref_file_path, "r", encoding="utf-8") as file:
         refs = json.load(file)
@@ -180,15 +185,36 @@ def fetch_scoring_results(responses):
 
 
 if __name__ == "__main__":
-    data_name = "mix"
-    mode, question_stage = "naive", 2
+    parser = argparse.ArgumentParser(description="按 LLM 五维指标对 Step_3 答案打分")
+    parser.add_argument(
+        "--data-name",
+        type=str,
+        default=DEFAULT_DATA_NAME,
+        help=f"caches/<name>/questions 与 response（默认 {DEFAULT_DATA_NAME!r}，与 reproduce 一致）",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="naive",
+        help="与 Step_3 输出文件名前缀一致，如 naive / hyper / hyper-lite",
+    )
+    parser.add_argument(
+        "--question-stage",
+        type=int,
+        default=2,
+        choices=(1, 2, 3),
+        help="问题阶段，对应 <n>_stage.json",
+    )
+    args = parser.parse_args()
+    data_name = args.data_name
+    mode, question_stage = args.mode, args.question_stage
     WORKING_DIR = Path("caches") / data_name
     RESPONSE_DIR = WORKING_DIR / "response"
     question_file_path = WORKING_DIR / "questions" / f"{question_stage}_stage.json"
     answer_file_path = RESPONSE_DIR / f"{mode}_{question_stage}_stage_result.json"
 
     # extract questions, answers and references
-    raw_queries, raw_refs = extarct_queries_and_refs(question_file_path)
+    raw_queries, raw_refs = extract_queries_and_refs(question_file_path)
     queries, answers = extract_queries_and_answers(answer_file_path)
     assert len(queries) == len(raw_queries)
     assert len(queries) == len(raw_refs)

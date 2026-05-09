@@ -1,7 +1,7 @@
+import argparse
 import re
 import sys
 import json
-import tiktoken
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
@@ -9,11 +9,9 @@ from openai import OpenAI
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from my_config import LLM_API_KEY, LLM_BASE_URL
+from my_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
 
-# suggest using more powerful LLMs to extract questions like gpt-4o
-LLM_MODEL = "gpt-4o"
-# LLM_MODEL = "gpt-4o-mini"
+from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 
 def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs) -> str:
@@ -103,12 +101,18 @@ question_prompt = {
         """,
 }
 
-encoding = tiktoken.encoding_for_model("gpt-4o")
-
 
 if __name__ == "__main__":
-    data_name = "mix"
-    question_stage  = 2
+    parser = argparse.ArgumentParser(description="从 context 抽样调用 LLM 生成评测问题")
+    parser.add_argument(
+        "--data-name",
+        type=str,
+        default=DEFAULT_DATA_NAME,
+        help=f"读取 caches/<name>/contexts（默认 {DEFAULT_DATA_NAME!r}）",
+    )
+    args = parser.parse_args()
+    data_name = args.data_name
+    question_stage = 2
     WORKING_DIR = Path("caches") / data_name
     # number of question stages to extract, which can be 1, 2, or 3
     len_big_chunks = 3

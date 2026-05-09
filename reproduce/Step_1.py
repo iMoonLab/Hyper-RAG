@@ -1,7 +1,10 @@
+import argparse
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 import time
 import numpy as np
@@ -54,7 +57,14 @@ def insert_text(rag, file_path, retries=0, max_retries=3):
 
 
 if __name__ == "__main__":
-    data_name = "mix"
+    parser = argparse.ArgumentParser(description="将唯一 context JSON 写入 HyperRAG 索引")
+    parser.add_argument(
+        "--data-name",
+        type=str,
+        default=DEFAULT_DATA_NAME,
+        help=f"工作目录 caches/<name>（默认 {DEFAULT_DATA_NAME!r}）",
+    )
+    data_name = parser.parse_args().data_name
     WORKING_DIR = Path("caches") / data_name
     WORKING_DIR.mkdir(parents=True, exist_ok=True)
     rag = HyperRAG(

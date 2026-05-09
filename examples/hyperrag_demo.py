@@ -1,7 +1,12 @@
+import os
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+# 在 import numpy 之前设置，避免 Windows 上与其它 OpenMP 运行库冲突（见 hyperrag/__init__.py 说明）。
+if sys.platform == "win32":
+    os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 import time
 import numpy as np
@@ -54,18 +59,27 @@ if __name__ == "__main__":
     data_name = "mock"
     WORKING_DIR = Path("caches") / data_name
     WORKING_DIR.mkdir(parents=True, exist_ok=True)
+    # 较大 embedding batch + 较低并发，减少向量化子请求数，降低 403/限流概率；
+    # LLM 并发压低，减轻实体抽取阶段对 chat/completions 的 burst（易 429）。
     rag = HyperRAG(
         working_dir=WORKING_DIR,
         llm_model_func=llm_model_func,
         embedding_func=EmbeddingFunc(
             embedding_dim=EMB_DIM, max_token_size=8192, func=embedding_func
         ),
+        embedding_batch_num=64,
+        embedding_func_max_async=4,
+        llm_model_max_async=2,
     )
 
     # read the text file
     mock_data_file_path = Path("examples/mock_data.txt")
     with open(mock_data_file_path, "r", encoding="utf-8") as file:
         texts = file.read()
+    # 默认可跑全书；设 HYPERRAG_DEMO_TRUNCATE_BYTES=15000 等可缩短输入，便于阶段 A 快速冒烟（仍走 insert + 三模式 query）。
+    _trunc = os.environ.get("HYPERRAG_DEMO_TRUNCATE_BYTES", "").strip()
+    if _trunc.isdigit():
+        texts = texts[: int(_trunc)]
 
     # Insert the text into the RAG
     insert_texts_with_retry(rag, texts)

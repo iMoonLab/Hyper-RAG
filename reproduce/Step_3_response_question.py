@@ -1,7 +1,10 @@
+import argparse
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 import json
 import numpy as np
@@ -81,7 +84,14 @@ def run_queries_and_save_to_json(
 
 
 if __name__ == "__main__":
-    data_name = "mix"
+    parser = argparse.ArgumentParser(description="对 questions 跑 aquery 并写入 response/")
+    parser.add_argument(
+        "--data-name",
+        type=str,
+        default=DEFAULT_DATA_NAME,
+        help=f"HyperRAG working_dir = caches/<name>（默认 {DEFAULT_DATA_NAME!r}）",
+    )
+    data_name = parser.parse_args().data_name
     question_stage = 2
     WORKING_DIR = Path("caches") / data_name
     # input questions

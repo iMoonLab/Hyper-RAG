@@ -2,6 +2,8 @@ import json
 import argparse
 from pathlib import Path
 
+from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+
 
 def extract_unique_contexts(input_directory, output_directory):
     in_dir, out_dir = Path(input_directory), Path(output_directory)
@@ -57,15 +59,33 @@ def extract_unique_contexts(input_directory, output_directory):
 
 
 if __name__ == "__main__":
-    data_name = 'mix'
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-i", "--input_dir", type=str, default=f"datasets/{data_name}"
+    parser = argparse.ArgumentParser(
+        description="从 datasets 下 jsonl 去重 context，写入 caches/<data_name>/contexts/"
     )
     parser.add_argument(
-        "-o", "--output_dir", type=str, default=f"caches/{data_name}/contexts"
+        "--data-name",
+        type=str,
+        default=DEFAULT_DATA_NAME,
+        help=f"数据集目录名（默认 {DEFAULT_DATA_NAME!r}），用于默认输入/输出路径",
+    )
+    parser.add_argument(
+        "-i",
+        "--input_dir",
+        type=str,
+        default=None,
+        help="输入目录（默认 datasets/<data-name>）",
+    )
+    parser.add_argument(
+        "-o",
+        "--output_dir",
+        type=str,
+        default=None,
+        help="输出目录（默认 caches/<data-name>/contexts）",
     )
 
     args = parser.parse_args()
+    data_name = args.data_name
+    input_dir = args.input_dir or f"datasets/{data_name}"
+    output_dir = args.output_dir or f"caches/{data_name}/contexts"
 
-    extract_unique_contexts(args.input_dir, args.output_dir)
+    extract_unique_contexts(input_dir, output_dir)

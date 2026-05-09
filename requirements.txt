@@ -8,3 +8,10 @@ tenacity
 tiktoken
 xxhash
 hypergraph-db
+
+# reproduce Step_2/3, evaluate
+tqdm
+
+# service_api.py（README 中 uvicorn 启动示例）
+fastapi
+uvicorn[standard]
