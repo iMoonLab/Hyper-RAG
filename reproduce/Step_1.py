@@ -51,7 +51,7 @@ def insert_text(rag, file_path, retries=0, max_retries=3):
         except Exception as e:
             retries += 1
             print(f"Insertion failed, retrying ({retries}/{max_retries}), error: {e}")
-            time.sleep(10)
+            time.sleep(30)
     if retries == max_retries:
         print("Insertion failed after exceeding the maximum number of retries")
 
@@ -73,5 +73,11 @@ if __name__ == "__main__":
         embedding_func=EmbeddingFunc(
             embedding_dim=EMB_DIM, max_token_size=8192, func=embedding_func
         ),
+        # 更大块 → 更少 chunk，降低全量 Neurology 上实体抽取的 LLM 调用量（仍与默认 tiktoken 分块一致）
+        chunk_token_size=2400,
+        chunk_overlap_token_size=120,
+        # 降低并发，减轻 SiliconFlow 等网关的 429 / RetryError
+        llm_model_max_async=1,
+        embedding_func_max_async=4,
     )
     insert_text(rag, f"caches/{data_name}/contexts/{data_name}_unique_contexts.json")

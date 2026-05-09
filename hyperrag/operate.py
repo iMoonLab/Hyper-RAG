@@ -518,9 +518,8 @@ async def extract_entities(
         already_relations += len(maybe_edges)
         already_relations_low += len(maybe_edges_low)
         already_relations_high += len(maybe_edges_high)
-        now_ticks = PROMPTS["process_tickers"][
-            already_processed % len(PROMPTS["process_tickers"])
-        ]
+        # ASCII-only progress (Windows cp936/gbk consoles cannot print Braille/spinner glyphs)
+        spinner = "|/-\\"[already_processed % 4]
 
         # 计算用时
         current_time = datetime.now()
@@ -532,9 +531,9 @@ async def extract_entities(
         # 进度条
         percent = (already_processed / len(ordered_chunks)) * 100
         bar_length = int(50 * already_processed // len(ordered_chunks))
-        bar = '█' * bar_length + '-' * (50 - bar_length)
+        bar = "#" * bar_length + "-" * (50 - bar_length)
         sys.stdout.write(
-            f'\n\r|{bar}| {percent:.2f}% |{hours:02}:{minutes:02}:{seconds:02}| {now_ticks} Processed, {already_entities} entities, {already_relations} relations, {already_relations_low} relations_low, {already_relations_high} relations_high \n')
+            f'\n\r|{bar}| {percent:.2f}% |{hours:02}:{minutes:02}:{seconds:02}| {spinner} Processed, {already_entities} entities, {already_relations} relations, {already_relations_low} relations_low, {already_relations_high} relations_high \n')
         sys.stdout.flush()
         return dict(maybe_nodes), dict(maybe_edges), dict(maybe_edges_low), dict(maybe_edges_high)
 

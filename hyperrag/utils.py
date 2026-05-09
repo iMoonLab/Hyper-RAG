@@ -23,7 +23,7 @@ logger = logging.getLogger("hyper_rag")
 def set_logger(log_file: str):
     logger.setLevel(logging.DEBUG)
 
-    file_handler = logging.FileHandler(log_file)
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter(
