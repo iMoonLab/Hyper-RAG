@@ -139,12 +139,26 @@ if __name__ == "__main__":
             prompt = question_prompt[question_stage].format(context=context)
             response = llm_model_func(prompt)
 
-            question = re.findall(r'"Question": "(.*?)"', response)
-            if len(question) == 0:
+            question_text = None
+            brace = response.find("{")
+            if brace != -1:
+                try:
+                    obj, _ = json.JSONDecoder().raw_decode(response[brace:])
+                    if isinstance(obj, dict) and "Question" in obj:
+                        q = obj["Question"]
+                        if isinstance(q, str) and q.strip():
+                            question_text = q.strip()
+                except json.JSONDecodeError:
+                    pass
+            if question_text is None:
+                m = re.search(r'"Question"\s*:\s*"(.*?)"\s*}', response, re.DOTALL)
+                if m:
+                    question_text = m.group(1).strip()
+            if not question_text:
                 print("No question found in the response.")
                 continue
 
-            question_list.append(question[0])
+            question_list.append(question_text)
             reference_list.append(context)
 
             cnt += 1

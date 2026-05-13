@@ -61,8 +61,8 @@ def run_queries_and_save_to_json(
 ):
     loop = always_get_an_event_loop()
 
-    with open(output_file, "a", encoding="utf-8") as result_file, open(
-        error_file, "a", encoding="utf-8"
+    with open(output_file, "w", encoding="utf-8") as result_file, open(
+        error_file, "w", encoding="utf-8"
     ) as err_file:
         result_file.write("[\n")
         first_entry = True
@@ -91,7 +91,16 @@ if __name__ == "__main__":
         default=DEFAULT_DATA_NAME,
         help=f"HyperRAG working_dir = caches/<name>（默认 {DEFAULT_DATA_NAME!r}）",
     )
-    data_name = parser.parse_args().data_name
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="naive",
+        choices=["naive", "hyper", "hyper-lite"],
+        help="QueryParam.mode（可多次运行本脚本分别生成各 mode 结果）",
+    )
+    args = parser.parse_args()
+    data_name = args.data_name
+    mode = args.mode
     question_stage = 2
     WORKING_DIR = Path("caches") / data_name
     # input questions
@@ -106,11 +115,9 @@ if __name__ == "__main__":
         embedding_func=EmbeddingFunc(
             embedding_dim=EMB_DIM, max_token_size=8192, func=embedding_func
         ),
+        llm_model_max_async=32,
+        embedding_func_max_async=4,
     )
-    # configure query parameters
-    mode = "naive"
-    # mode = "hyper"
-    # mode = "hyper-lite"
     query_param = QueryParam(mode=mode)
 
     OUT_DIR = WORKING_DIR / "response"

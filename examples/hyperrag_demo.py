@@ -59,8 +59,7 @@ if __name__ == "__main__":
     data_name = "mock"
     WORKING_DIR = Path("caches") / data_name
     WORKING_DIR.mkdir(parents=True, exist_ok=True)
-    # 较大 embedding batch + 较低并发，减少向量化子请求数，降低 403/限流概率；
-    # LLM 并发压低，减轻实体抽取阶段对 chat/completions 的 burst（易 429）。
+    # 嵌入走公网：较大 batch + 适中并发，减轻 403/429；自建 chat 可提高 llm_model_max_async。
     rag = HyperRAG(
         working_dir=WORKING_DIR,
         llm_model_func=llm_model_func,
@@ -69,7 +68,7 @@ if __name__ == "__main__":
         ),
         embedding_batch_num=64,
         embedding_func_max_async=4,
-        llm_model_max_async=2,
+        llm_model_max_async=16,
     )
 
     # read the text file
