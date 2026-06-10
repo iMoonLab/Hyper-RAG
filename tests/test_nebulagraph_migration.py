@@ -1,4 +1,5 @@
 import importlib.util
+import asyncio
 from pathlib import Path
 import pickle
 import sys
@@ -39,6 +40,9 @@ nebulagraph_storage = _load_module(
 
 load_hgdb_snapshot = nebulagraph_migration.load_hgdb_snapshot
 migrate_snapshot_to_storage = nebulagraph_migration.migrate_snapshot_to_storage
+migrate_snapshot_to_storage_async = (
+    nebulagraph_migration.migrate_snapshot_to_storage_async
+)
 NebulaHypergraphStorage = nebulagraph_storage.NebulaHypergraphStorage
 
 
@@ -47,6 +51,14 @@ class PickledHypergraphObject:
         self._v_data = vertices
         self._e_data = hyperedges
         self._v_inci = {}
+
+
+class MutatingStorage:
+    async def upsert_vertex(self, vertex_id, vertex_data):
+        vertex_data["description"] = "mutated by storage"
+
+    async def upsert_hyperedge(self, id_set, hyperedge_data):
+        hyperedge_data["weight"] = 999
 
 
 class NebulaGraphMigrationTest(unittest.TestCase):
@@ -170,6 +182,50 @@ class NebulaGraphMigrationTest(unittest.TestCase):
         self.assertEqual("travel,event", edge_data["keywords"])
         self.assertEqual("chunk-abc", edge_data["source_id"])
         self.assertEqual(2.5, edge_data["weight"])
+
+    def test_migration_passes_payload_copies_to_storage(self):
+        snapshot = nebulagraph_migration.HypergraphSnapshot(
+            vertices={"A": {"description": "Alice"}},
+            hyperedges={("A",): {"weight": 1}},
+        )
+
+        migrate_snapshot_to_storage(snapshot, MutatingStorage())
+
+        self.assertEqual("Alice", snapshot.vertices["A"]["description"])
+        self.assertEqual(1, snapshot.hyperedges[("A",)]["weight"])
+
+    def test_async_migration_entrypoint_runs_inside_event_loop(self):
+        async def run_migration():
+            snapshot = nebulagraph_migration.HypergraphSnapshot(
+                vertices={"A": {"description": "Alice"}},
+                hyperedges={("A",): {"weight": 1}},
+            )
+            storage = NebulaHypergraphStorage(
+                namespace="test",
+                global_config={"working_dir": "/tmp"},
+            )
+            await migrate_snapshot_to_storage_async(snapshot, storage)
+            return storage
+
+        storage = asyncio.run(run_migration())
+
+        self.assertEqual("Alice", storage._vertex_data["A"]["description"])
+        self.assertEqual(["A"], storage._hyperedge_data[("A",)]["id_set"])
+
+    def test_sync_migration_rejects_running_event_loop(self):
+        async def run_migration():
+            snapshot = nebulagraph_migration.HypergraphSnapshot(
+                vertices={"A": {}},
+                hyperedges={},
+            )
+            storage = NebulaHypergraphStorage(
+                namespace="test",
+                global_config={"working_dir": "/tmp"},
+            )
+            migrate_snapshot_to_storage(snapshot, storage)
+
+        with self.assertRaisesRegex(RuntimeError, "active event loop"):
+            asyncio.run(run_migration())
 
 
 if __name__ == "__main__":

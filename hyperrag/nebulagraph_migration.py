@@ -5,7 +5,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 import pickle
-import threading
 from typing import Any
 
 from .nebulagraph_ids import normalize_id_set
@@ -31,26 +30,17 @@ def _run_sync(coro):
     except RuntimeError:
         return asyncio.run(coro)
 
-    if not loop.is_running():
-        return loop.run_until_complete(coro)
-
-    result = {}
-
-    def runner():
-        try:
-            result["value"] = asyncio.run(coro)
-        except BaseException as exc:
-            result["error"] = exc
-
-    thread = threading.Thread(target=runner)
-    thread.start()
-    thread.join()
-    if "error" in result:
-        raise result["error"]
-    return result.get("value")
+    coro.close()
+    if loop.is_running():
+        raise RuntimeError(
+            "migrate_snapshot_to_storage cannot run inside an active event loop; "
+            "use migrate_snapshot_to_storage_async instead."
+        )
+    return loop.run_until_complete(coro)
 
 
 def load_hgdb_snapshot(hgdb_file: str | Path) -> HypergraphSnapshot:
+    """Load a local trusted HypergraphDB `.hgdb` pickle snapshot."""
     hgdb_path = Path(hgdb_file)
     with hgdb_path.open("rb") as file:
         raw_data = pickle.load(file)
@@ -89,22 +79,26 @@ def _extract_hypergraph_payload(raw_data: Any) -> tuple[dict[Any, Any], dict[Any
     return raw_vertices, raw_hyperedges
 
 
+async def migrate_snapshot_to_storage_async(
+    snapshot: HypergraphSnapshot, storage
+) -> None:
+    for vertex_id, vertex_data in snapshot.vertices.items():
+        await storage.upsert_vertex(vertex_id, deepcopy(vertex_data))
+
+    for id_set, hyperedge_data in snapshot.hyperedges.items():
+        data = deepcopy(hyperedge_data)
+        data.setdefault("id_set", list(id_set))
+        data.setdefault("arity", len(id_set))
+        await storage.upsert_hyperedge(id_set, data)
+
+
 def migrate_snapshot_to_storage(snapshot: HypergraphSnapshot, storage) -> None:
-    async def migrate() -> None:
-        for vertex_id, vertex_data in snapshot.vertices.items():
-            await storage.upsert_vertex(vertex_id, vertex_data)
-
-        for id_set, hyperedge_data in snapshot.hyperedges.items():
-            data = deepcopy(hyperedge_data)
-            data.setdefault("id_set", list(id_set))
-            data.setdefault("arity", len(id_set))
-            await storage.upsert_hyperedge(id_set, data)
-
-    _run_sync(migrate())
+    _run_sync(migrate_snapshot_to_storage_async(snapshot, storage))
 
 
 __all__ = [
     "HypergraphSnapshot",
     "load_hgdb_snapshot",
     "migrate_snapshot_to_storage",
+    "migrate_snapshot_to_storage_async",
 ]
