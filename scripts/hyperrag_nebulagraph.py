@@ -60,7 +60,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "schema-check":
         schema_statements_for_space = _load_schema_statements_for_space()
-        for statement in schema_statements_for_space(args.space):
+        try:
+            statements = schema_statements_for_space(args.space)
+        except ValueError as exc:
+            parser.error(str(exc))
+        for statement in statements:
             print(statement)
         return 0
 

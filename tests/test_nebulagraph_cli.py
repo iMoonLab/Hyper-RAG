@@ -1,6 +1,7 @@
 import contextlib
 import importlib.util
 import io
+import os
 from pathlib import Path
 import sys
 import unittest
@@ -40,6 +41,16 @@ class NebulaGraphCliTest(unittest.TestCase):
         self.assertTrue(
             any("CREATE EDGE IF NOT EXISTS MEMBER_OF" in line for line in lines)
         )
+
+    def test_script_is_directly_executable(self):
+        self.assertTrue(os.access(MODULE_PATH, os.X_OK))
+
+    def test_main_schema_check_reports_invalid_space_as_parser_error(self):
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as captured:
+                hyperrag_nebulagraph.main(["schema-check", "--space", "bad`space"])
+
+        self.assertEqual(2, captured.exception.code)
 
     def test_parser_exposes_migrate_arguments(self):
         parser = hyperrag_nebulagraph.build_parser()

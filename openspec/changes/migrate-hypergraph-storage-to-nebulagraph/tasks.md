@@ -3,7 +3,7 @@
 - [x] 1.1 Add hypergraph backend configuration with `.hgdb` as the default backend.
 - [x] 1.2 Add NebulaGraph connection settings for host, port, credentials, graph space, and per-database mapping.
 - [x] 1.3 Define NebulaGraph schema for Entity vertices, Hyperedge vertices, membership edges, and optional reverse membership edges.
-- [x] 1.4 Add a schema initialization/check command that verifies required tags, edge types, and indexes exist before migration.
+- [ ] 1.4 Add a schema initialization/check command that verifies required tags, edge types, and indexes exist before migration.
 - [x] 1.5 Add explicit backend modes for `hgdb`, `mirror-only`, `dual-read`, and `nebulagraph-serving`.
 - [x] 1.6 Define failure policy defaults so `.hgdb` remains serving when NebulaGraph is unavailable, unvalidated, or misconfigured.
 
