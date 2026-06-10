@@ -48,6 +48,25 @@ class NebulaGraphIdsTest(unittest.TestCase):
         self.assertEqual(first_vid, second_vid)
         self.assertTrue(first_vid.startswith("hedge:"))
 
+    def test_entity_vid_payload_serialization_is_unambiguous(self):
+        self.assertNotEqual(
+            canonical_entity_vid("a", "b\x1fc"),
+            canonical_entity_vid("a\x1fb", "c"),
+        )
+
+    def test_hyperedge_vid_payload_serialization_is_unambiguous(self):
+        self.assertNotEqual(
+            canonical_hyperedge_vid("demo", ["A\x1eB"]),
+            canonical_hyperedge_vid("demo", ["A", "B"]),
+        )
+
+    def test_none_identifier_parts_are_rejected(self):
+        with self.assertRaises(ValueError):
+            canonical_entity_vid("demo", None)
+
+        with self.assertRaises(ValueError):
+            normalize_id_set(["A", None])
+
 
 if __name__ == "__main__":
     unittest.main()
