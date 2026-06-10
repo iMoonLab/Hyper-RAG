@@ -39,6 +39,14 @@ class NebulaGraphConfigTest(unittest.TestCase):
 
         self.assertEqual(HypergraphBackendMode.HGDB, mode)
 
+    def test_mode_is_trimmed_and_case_insensitive(self):
+        with patch.dict(os.environ, {}, clear=True):
+            mode = resolve_hypergraph_backend_mode(
+                {"hypergraph_backend_mode": " DUAL-READ "}
+            )
+
+        self.assertEqual(HypergraphBackendMode.DUAL_READ, mode)
+
     def test_settings_default_to_not_serving_and_fallback_to_hgdb(self):
         with patch.dict(os.environ, {}, clear=True):
             settings = NebulaGraphSettings.from_config({})
@@ -46,6 +54,30 @@ class NebulaGraphConfigTest(unittest.TestCase):
         self.assertEqual(HypergraphBackendMode.HGDB, settings.mode)
         self.assertFalse(settings.serving_enabled)
         self.assertTrue(settings.fallback_to_hgdb)
+
+    def test_serving_requires_explicit_validated_true(self):
+        with patch.dict(os.environ, {}, clear=True):
+            settings = NebulaGraphSettings.from_config(
+                {
+                    "hypergraph_backend_mode": "nebulagraph-serving",
+                    "nebulagraph_validated": "true",
+                }
+            )
+
+        self.assertTrue(settings.serving_enabled)
+
+    def test_serving_rejects_non_true_validation_states(self):
+        for validation_state in ("pending", "failed", "invalid", "false", ""):
+            with self.subTest(validation_state=validation_state):
+                with patch.dict(os.environ, {}, clear=True):
+                    settings = NebulaGraphSettings.from_config(
+                        {
+                            "hypergraph_backend_mode": "nebulagraph-serving",
+                            "nebulagraph_validated": validation_state,
+                        }
+                    )
+
+                self.assertFalse(settings.serving_enabled)
 
 
 if __name__ == "__main__":

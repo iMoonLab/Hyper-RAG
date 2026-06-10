@@ -45,7 +45,7 @@ class NebulaGraphSettings:
 
         serving_enabled = (
             mode == HypergraphBackendMode.NEBULAGRAPH_SERVING
-            and _coerce_bool(
+            and _coerce_strict_true(
                 _get_config_value(config, "nebulagraph_validated", "", False)
             )
         )
@@ -137,7 +137,7 @@ class NebulaGraphSettings:
 
 def _coerce_backend_mode(value: Any) -> HypergraphBackendMode:
     try:
-        return HypergraphBackendMode(str(value))
+        return HypergraphBackendMode(str(value).strip().lower())
     except ValueError:
         return HypergraphBackendMode.HGDB
 
@@ -153,6 +153,16 @@ def _coerce_bool(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip().lower() not in {"", "0", "false", "no", "off"}
     return bool(value)
+
+
+def _coerce_strict_true(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    if isinstance(value, int):
+        return value == 1
+    return False
 
 
 def _get_config_value(
