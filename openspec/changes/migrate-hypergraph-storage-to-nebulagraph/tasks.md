@@ -9,14 +9,14 @@
 
 ## 2. Migration Tooling
 
-- [ ] 2.1 Implement a reader that loads existing `hypergraph_chunk_entity_relation.hgdb` data through the current HypergraphDB format.
+- [x] 2.1 Implement a reader that loads existing `hypergraph_chunk_entity_relation.hgdb` data through the current HypergraphDB format.
 - [x] 2.2 Generate stable Entity vertex IDs from canonical entity names and database scope.
 - [x] 2.3 Generate stable Hyperedge vertex IDs from normalized `id_set` values and database scope.
-- [ ] 2.4 Upsert Entity vertices while preserving `entity_type`, `description`, `source_id`, and `additional_properties`.
-- [ ] 2.5 Upsert Hyperedge vertices while preserving `id_set`, `description`, `keywords`, `weight`, `source_id`, and arity.
-- [ ] 2.6 Upsert membership relationships between each Entity vertex and its Hyperedge vertex.
-- [ ] 2.7 Make migration repeatable without creating duplicate logical entities or hyperedges.
-- [ ] 2.8 Add mirror-only migration execution that writes NebulaGraph data while leaving `.hgdb` as the serving backend.
+- [x] 2.4 Upsert Entity vertices while preserving `entity_type`, `description`, `source_id`, and `additional_properties`.
+- [x] 2.5 Upsert Hyperedge vertices while preserving `id_set`, `description`, `keywords`, `weight`, `source_id`, and arity.
+- [x] 2.6 Upsert membership relationships between each Entity vertex and its Hyperedge vertex.
+- [x] 2.7 Make migration repeatable without creating duplicate logical entities or hyperedges.
+- [x] 2.8 Add mirror-only migration execution that writes NebulaGraph data while leaving `.hgdb` as the serving backend.
 
 ## 3. NebulaGraph Storage Adapter
 
@@ -60,7 +60,7 @@
 
 - [x] 7.1 Add unit tests for entity ID normalization, hyperedge ID normalization, and high-order hyperedge round trips.
 - [x] 7.2 Add adapter tests covering every `BaseHypergraphStorage` method used by retrieval.
-- [ ] 7.3 Add migration tests using a small `.hgdb` fixture with both pairwise and high-order hyperedges.
+- [x] 7.3 Add migration tests using a small `.hgdb` fixture with both pairwise and high-order hyperedges.
 - [ ] 7.4 Add integration tests comparing `.hgdb` and NebulaGraph retrieval outputs for a fixed fixture dataset.
 - [ ] 7.5 Add tests that prove mirror-only and dual-read modes keep `.hgdb` as the serving backend.
 - [x] 7.6 Add tests for deterministic output ordering and degree semantics.
