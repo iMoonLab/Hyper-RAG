@@ -20,14 +20,14 @@
 
 ## 3. NebulaGraph Storage Adapter
 
-- [ ] 3.1 Add `NebulaHypergraphStorage` implementing the full `BaseHypergraphStorage` interface.
-- [ ] 3.2 Implement vertex existence, lookup, upsert, removal, count, and listing behavior.
-- [ ] 3.3 Implement hyperedge existence, lookup, upsert, removal, count, and listing behavior using Hyperedge vertices.
-- [ ] 3.4 Implement `get_nbr_e_of_vertex`, `get_nbr_v_of_hyperedge`, and `get_nbr_v_of_vertex` with outputs normalized to match `.hgdb` semantics.
-- [ ] 3.5 Implement `vertex_degree` and `hyperedge_degree` with parity against the current backend.
+- [x] 3.1 Add `NebulaHypergraphStorage` implementing the full `BaseHypergraphStorage` interface.
+- [x] 3.2 Implement vertex existence, lookup, upsert, removal, count, and listing behavior.
+- [x] 3.3 Implement hyperedge existence, lookup, upsert, removal, count, and listing behavior using Hyperedge vertices.
+- [x] 3.4 Implement `get_nbr_e_of_vertex`, `get_nbr_v_of_hyperedge`, and `get_nbr_v_of_vertex` with outputs normalized to match `.hgdb` semantics.
+- [x] 3.5 Implement `vertex_degree` and `hyperedge_degree` with parity against the current backend.
 - [ ] 3.6 Add batching for hot retrieval paths used by `hyper_query`, `hyper_query_lite`, and `graph_query`.
-- [ ] 3.7 Normalize returned hyperedge tuples, neighbor lists, and entity lists into deterministic ordering before returning to retrieval code.
-- [ ] 3.8 Ensure degree calculations do not double-count reverse or auxiliary membership edges.
+- [x] 3.7 Normalize returned hyperedge tuples, neighbor lists, and entity lists into deterministic ordering before returning to retrieval code.
+- [x] 3.8 Ensure degree calculations do not double-count reverse or auxiliary membership edges.
 
 ## 4. Integration
 
@@ -59,9 +59,9 @@
 ## 7. Tests And Documentation
 
 - [x] 7.1 Add unit tests for entity ID normalization, hyperedge ID normalization, and high-order hyperedge round trips.
-- [ ] 7.2 Add adapter tests covering every `BaseHypergraphStorage` method used by retrieval.
+- [x] 7.2 Add adapter tests covering every `BaseHypergraphStorage` method used by retrieval.
 - [ ] 7.3 Add migration tests using a small `.hgdb` fixture with both pairwise and high-order hyperedges.
 - [ ] 7.4 Add integration tests comparing `.hgdb` and NebulaGraph retrieval outputs for a fixed fixture dataset.
 - [ ] 7.5 Add tests that prove mirror-only and dual-read modes keep `.hgdb` as the serving backend.
-- [ ] 7.6 Add tests for deterministic output ordering and degree semantics.
+- [x] 7.6 Add tests for deterministic output ordering and degree semantics.
 - [ ] 7.7 Document NebulaGraph setup, schema initialization, mirror-only migration, validation, enablement, failure policy, and rollback steps.
