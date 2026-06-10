@@ -40,10 +40,10 @@
 
 ## 5. Dual-Read Validation
 
-- [ ] 5.1 Add storage parity checks for vertex count, hyperedge count, sampled entity records, sampled hyperedge records, neighbor lookups, and degree values.
+- [x] 5.1 Add storage parity checks for vertex count, hyperedge count, sampled entity records, sampled hyperedge records, neighbor lookups, and degree values.
 - [ ] 5.2 Add retrieval parity checks for fixed question sets across `hyper`, `hyper-lite`, and `graph` modes.
 - [ ] 5.3 Compare retrieved entities, hyperedges, and source text units while keeping vector stores unchanged.
-- [ ] 5.4 Report failed parity checks with enough detail to identify missing records, changed source IDs, or changed neighbor sets.
+- [x] 5.4 Report failed parity checks with enough detail to identify missing records, changed source IDs, or changed neighbor sets.
 - [ ] 5.5 Add context string diff reporting after deterministic normalization.
 - [ ] 5.6 Add optional final answer regression scoring when an evaluator is configured.
 - [ ] 5.7 Add validation checks for NebulaGraph schema completeness and migration completeness.
