@@ -42,6 +42,13 @@ migrate_snapshot_to_storage = nebulagraph_migration.migrate_snapshot_to_storage
 NebulaHypergraphStorage = nebulagraph_storage.NebulaHypergraphStorage
 
 
+class PickledHypergraphObject:
+    def __init__(self, vertices, hyperedges):
+        self._v_data = vertices
+        self._e_data = hyperedges
+        self._v_inci = {}
+
+
 class NebulaGraphMigrationTest(unittest.TestCase):
     def _write_hgdb_fixture(self, payload):
         temp_dir = tempfile.TemporaryDirectory()
@@ -89,6 +96,19 @@ class NebulaGraphMigrationTest(unittest.TestCase):
         )
         self.assertEqual("chunk-ab", snapshot.hyperedges[("A", "B")]["source_id"])
         self.assertEqual(0.75, snapshot.hyperedges[("A", "B")]["weight"])
+
+    def test_load_hgdb_snapshot_supports_pickled_hypergraph_object(self):
+        hgdb_file = self._write_hgdb_fixture(
+            PickledHypergraphObject(
+                vertices={"A": {"description": "Alice"}},
+                hyperedges={("A", "B"): {"weight": 1.0}},
+            )
+        )
+
+        snapshot = load_hgdb_snapshot(hgdb_file)
+
+        self.assertEqual("Alice", snapshot.vertices["A"]["description"])
+        self.assertEqual(1.0, snapshot.hyperedges[("A", "B")]["weight"])
 
     def test_migration_is_repeatable_without_duplicate_logical_records(self):
         hgdb_file = self._write_hgdb_fixture(

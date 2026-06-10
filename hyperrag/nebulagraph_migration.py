@@ -55,17 +55,7 @@ def load_hgdb_snapshot(hgdb_file: str | Path) -> HypergraphSnapshot:
     with hgdb_path.open("rb") as file:
         raw_data = pickle.load(file)
 
-    if not isinstance(raw_data, dict):
-        raise TypeError(
-            f"HypergraphDB file must contain a dict, got {type(raw_data).__name__}."
-        )
-
-    raw_vertices = raw_data.get("v_data", {})
-    raw_hyperedges = raw_data.get("e_data", {})
-    if not isinstance(raw_vertices, dict):
-        raise TypeError("HypergraphDB v_data must be a dict.")
-    if not isinstance(raw_hyperedges, dict):
-        raise TypeError("HypergraphDB e_data must be a dict.")
+    raw_vertices, raw_hyperedges = _extract_hypergraph_payload(raw_data)
 
     vertices = {
         normalize_id_set([vertex_id])[0]: _copy_payload(vertex_data)
@@ -77,6 +67,26 @@ def load_hgdb_snapshot(hgdb_file: str | Path) -> HypergraphSnapshot:
     }
 
     return HypergraphSnapshot(vertices=vertices, hyperedges=hyperedges)
+
+
+def _extract_hypergraph_payload(raw_data: Any) -> tuple[dict[Any, Any], dict[Any, Any]]:
+    if isinstance(raw_data, dict):
+        raw_vertices = raw_data.get("v_data", {})
+        raw_hyperedges = raw_data.get("e_data", {})
+    elif hasattr(raw_data, "_v_data") and hasattr(raw_data, "_e_data"):
+        raw_vertices = raw_data._v_data
+        raw_hyperedges = raw_data._e_data
+    else:
+        raise TypeError(
+            "HypergraphDB file must contain a dict payload or an object with "
+            f"_v_data/_e_data attributes, got {type(raw_data).__name__}."
+        )
+
+    if not isinstance(raw_vertices, dict):
+        raise TypeError("HypergraphDB v_data must be a dict.")
+    if not isinstance(raw_hyperedges, dict):
+        raise TypeError("HypergraphDB e_data must be a dict.")
+    return raw_vertices, raw_hyperedges
 
 
 def migrate_snapshot_to_storage(snapshot: HypergraphSnapshot, storage) -> None:
