@@ -55,6 +55,14 @@ class NebulaGraphConfigTest(unittest.TestCase):
         self.assertFalse(settings.serving_enabled)
         self.assertTrue(settings.fallback_to_hgdb)
 
+    def test_nebulagraph_fallback_key_disables_fallback(self):
+        with patch.dict(os.environ, {}, clear=True):
+            settings = NebulaGraphSettings.from_config(
+                {"nebulagraph_fallback_to_hgdb": "false"}
+            )
+
+        self.assertFalse(settings.fallback_to_hgdb)
+
     def test_serving_requires_explicit_validated_true(self):
         with patch.dict(os.environ, {}, clear=True):
             settings = NebulaGraphSettings.from_config(

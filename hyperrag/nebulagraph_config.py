@@ -122,13 +122,23 @@ class NebulaGraphSettings:
             fallback_to_hgdb=_coerce_bool(
                 _get_config_value(
                     database_config,
-                    "fallback_to_hgdb",
+                    "nebulagraph_fallback_to_hgdb",
                     "",
                     _get_config_value(
-                        config,
+                        database_config,
                         "fallback_to_hgdb",
-                        "HYPERRAG_FALLBACK_TO_HGDB",
-                        True,
+                        "",
+                        _get_config_value(
+                            config,
+                            "nebulagraph_fallback_to_hgdb",
+                            "HYPERRAG_NEBULAGRAPH_FALLBACK_TO_HGDB",
+                            _get_config_value(
+                                config,
+                                "fallback_to_hgdb",
+                                "HYPERRAG_FALLBACK_TO_HGDB",
+                                True,
+                            ),
+                        ),
                     ),
                 )
             ),
