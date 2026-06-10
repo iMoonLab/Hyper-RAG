@@ -67,6 +67,21 @@ class NeighborMismatchStorage:
         return ["A", "C"]
 
 
+class VertexNeighborMismatchStorage(NeighborMismatchStorage):
+    async def get_nbr_e_of_vertex(self, vertex_id):
+        return []
+
+
+class VertexDegreeMismatchStorage(NeighborMismatchStorage):
+    async def vertex_degree(self, vertex_id):
+        return 99
+
+
+class HyperedgeDegreeMismatchStorage(NeighborMismatchStorage):
+    async def hyperedge_degree(self, id_set):
+        return 99
+
+
 class NebulaGraphValidationTest(unittest.IsolatedAsyncioTestCase):
     def _storage(self):
         return NebulaHypergraphStorage(
@@ -139,6 +154,29 @@ class NebulaGraphValidationTest(unittest.IsolatedAsyncioTestCase):
             report.failures,
         )
 
+    async def test_hyperedge_count_mismatch_reports_clear_failure(self):
+        left, right = await self._matching_pair()
+        await right.upsert_vertex("C", {"description": "Conference"})
+        await right.upsert_hyperedge(("A", "C"), {"weight": 2})
+
+        report = await compare_storage_backends(
+            left,
+            right,
+            sample_vertices=["A"],
+            sample_hyperedges=[("A", "B")],
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "hyperedge count mismatch" in failure
+                and "left=1" in failure
+                and "right=2" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
+
     async def test_vertex_payload_mismatch_reports_vertex_id(self):
         left, right = await self._matching_pair()
         await right.upsert_vertex(
@@ -163,6 +201,95 @@ class NebulaGraphValidationTest(unittest.IsolatedAsyncioTestCase):
             report.failures,
         )
 
+    async def test_vertex_degree_mismatch_reports_vertex_id(self):
+        left, right = await self._matching_pair()
+        right_with_bad_degree = VertexDegreeMismatchStorage(right)
+
+        report = await compare_storage_backends(
+            left,
+            right_with_bad_degree,
+            sample_vertices=["A"],
+            sample_hyperedges=[("A", "B")],
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "vertex degree mismatch" in failure and "A" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
+
+    async def test_vertex_neighbor_mismatch_reports_vertex_id(self):
+        left, right = await self._matching_pair()
+        right_with_bad_neighbors = VertexNeighborMismatchStorage(right)
+
+        report = await compare_storage_backends(
+            left,
+            right_with_bad_neighbors,
+            sample_vertices=["A"],
+            sample_hyperedges=[("A", "B")],
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "vertex neighbor hyperedges mismatch" in failure and "A" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
+
+    async def test_hyperedge_payload_mismatch_reports_normalized_id_set(self):
+        left, right = await self._matching_pair()
+        await right.upsert_hyperedge(
+            ("A", "B"),
+            {
+                "description": "Different",
+                "source_id": "chunk-ab",
+                "weight": 1.0,
+            },
+        )
+
+        report = await compare_storage_backends(
+            left,
+            right,
+            sample_vertices=["A"],
+            sample_hyperedges=[("B", "A")],
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "hyperedge payload mismatch" in failure
+                and "('A', 'B')" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
+
+    async def test_hyperedge_degree_mismatch_reports_normalized_id_set(self):
+        left, right = await self._matching_pair()
+        right_with_bad_degree = HyperedgeDegreeMismatchStorage(right)
+
+        report = await compare_storage_backends(
+            left,
+            right_with_bad_degree,
+            sample_vertices=["A"],
+            sample_hyperedges=[("B", "A")],
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "hyperedge degree mismatch" in failure
+                and "('A', 'B')" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
+
     async def test_hyperedge_neighbor_mismatch_reports_normalized_id_set(self):
         left, right = await self._matching_pair()
         right_with_bad_neighbors = NeighborMismatchStorage(right)
@@ -175,6 +302,35 @@ class NebulaGraphValidationTest(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "hyperedge neighbors mismatch" in failure
+                and "('A', 'B')" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
+
+    async def test_missing_sampled_hyperedge_returns_failures_instead_of_raising(self):
+        left, right = await self._matching_pair()
+        await right.remove_hyperedge(("A", "B"))
+
+        report = await compare_storage_backends(
+            left,
+            right,
+            sample_vertices=["A"],
+            sample_hyperedges=[("B", "A")],
+        )
+
+        self.assertFalse(report.passed)
+        self.assertTrue(
+            any(
+                "hyperedge payload mismatch" in failure
+                and "('A', 'B')" in failure
+                for failure in report.failures
+            ),
+            report.failures,
+        )
         self.assertTrue(
             any(
                 "hyperedge neighbors mismatch" in failure

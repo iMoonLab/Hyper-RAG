@@ -22,7 +22,7 @@ def _sorted_hyperedges(edges: Iterable[Iterable[Any]]) -> list[tuple[str, ...]]:
 
 
 def _sorted_vertices(vertices: Iterable[Any]) -> list[str]:
-    return list(normalize_id_set(vertices))
+    return sorted({str(vertex).strip() for vertex in vertices if str(vertex).strip()})
 
 
 async def compare_storage_backends(
