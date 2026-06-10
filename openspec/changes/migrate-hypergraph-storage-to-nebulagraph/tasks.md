@@ -10,8 +10,8 @@
 ## 2. Migration Tooling
 
 - [ ] 2.1 Implement a reader that loads existing `hypergraph_chunk_entity_relation.hgdb` data through the current HypergraphDB format.
-- [ ] 2.2 Generate stable Entity vertex IDs from canonical entity names and database scope.
-- [ ] 2.3 Generate stable Hyperedge vertex IDs from normalized `id_set` values and database scope.
+- [x] 2.2 Generate stable Entity vertex IDs from canonical entity names and database scope.
+- [x] 2.3 Generate stable Hyperedge vertex IDs from normalized `id_set` values and database scope.
 - [ ] 2.4 Upsert Entity vertices while preserving `entity_type`, `description`, `source_id`, and `additional_properties`.
 - [ ] 2.5 Upsert Hyperedge vertices while preserving `id_set`, `description`, `keywords`, `weight`, `source_id`, and arity.
 - [ ] 2.6 Upsert membership relationships between each Entity vertex and its Hyperedge vertex.
@@ -58,7 +58,7 @@
 
 ## 7. Tests And Documentation
 
-- [ ] 7.1 Add unit tests for entity ID normalization, hyperedge ID normalization, and high-order hyperedge round trips.
+- [x] 7.1 Add unit tests for entity ID normalization, hyperedge ID normalization, and high-order hyperedge round trips.
 - [ ] 7.2 Add adapter tests covering every `BaseHypergraphStorage` method used by retrieval.
 - [ ] 7.3 Add migration tests using a small `.hgdb` fixture with both pairwise and high-order hyperedges.
 - [ ] 7.4 Add integration tests comparing `.hgdb` and NebulaGraph retrieval outputs for a fixed fixture dataset.
