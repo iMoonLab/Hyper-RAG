@@ -533,6 +533,11 @@ def get_or_create_hyperrag(database: str = None):
                 max_token_size=8192,
                 func=get_hyperrag_embedding_func
             ),
+            addon_params={
+                "database_name": database,
+                "hypergraph_backend_mode": settings.get("hypergraphBackendMode", "hgdb"),
+                "nebulagraph_validated": settings.get("nebulaGraphValidated", False),
+            },
         )
         
         main_logger.info(f"HyperRAG实例创建完成，数据库: {database}")

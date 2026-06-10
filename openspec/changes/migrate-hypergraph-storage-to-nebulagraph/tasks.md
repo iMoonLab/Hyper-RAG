@@ -31,11 +31,11 @@
 
 ## 4. Integration
 
-- [ ] 4.1 Wire backend selection into `HyperRAG` initialization without changing public query or insert APIs.
-- [ ] 4.2 Wire Web UI backend initialization to select `.hgdb` or NebulaGraph per configured database.
-- [ ] 4.3 Keep `NanoVectorDBStorage` and text chunk JSON storage unchanged for the initial migration.
+- [x] 4.1 Wire backend selection into `HyperRAG` initialization without changing public query or insert APIs.
+- [x] 4.2 Wire Web UI backend initialization to select `.hgdb` or NebulaGraph per configured database.
+- [x] 4.3 Keep `NanoVectorDBStorage` and text chunk JSON storage unchanged for the initial migration.
 - [ ] 4.4 Add diagnostics that expose selected hypergraph backend and NebulaGraph connection status.
-- [ ] 4.5 Ensure mirror-only and dual-read modes never serve user-facing query responses from NebulaGraph.
+- [x] 4.5 Ensure mirror-only and dual-read modes never serve user-facing query responses from NebulaGraph.
 - [ ] 4.6 Verify prompt construction, query routing, vector recall, text chunk lookup, and answer generation remain unchanged.
 
 ## 5. Dual-Read Validation
@@ -52,9 +52,9 @@
 
 - [ ] 6.1 Define configurable acceptance thresholds for storage parity and retrieval parity.
 - [ ] 6.2 Block NebulaGraph serving when parity checks fail.
-- [ ] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
+- [x] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
 - [ ] 6.4 Verify rollback by switching configuration back to `.hgdb` without changing Web UI or API request/response contracts.
-- [ ] 6.5 Verify `.hgdb` remains serving when NebulaGraph connection, schema validation, or migration validation fails.
+- [x] 6.5 Verify `.hgdb` remains serving when NebulaGraph connection, schema validation, or migration validation fails.
 
 ## 7. Tests And Documentation
 
@@ -62,6 +62,6 @@
 - [x] 7.2 Add adapter tests covering every `BaseHypergraphStorage` method used by retrieval.
 - [x] 7.3 Add migration tests using a small `.hgdb` fixture with both pairwise and high-order hyperedges.
 - [ ] 7.4 Add integration tests comparing `.hgdb` and NebulaGraph retrieval outputs for a fixed fixture dataset.
-- [ ] 7.5 Add tests that prove mirror-only and dual-read modes keep `.hgdb` as the serving backend.
+- [x] 7.5 Add tests that prove mirror-only and dual-read modes keep `.hgdb` as the serving backend.
 - [x] 7.6 Add tests for deterministic output ordering and degree semantics.
 - [ ] 7.7 Document NebulaGraph setup, schema initialization, mirror-only migration, validation, enablement, failure policy, and rollback steps.
