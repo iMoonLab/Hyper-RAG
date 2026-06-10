@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -18,7 +19,7 @@ class NebulaHypergraphStorage(BaseHypergraphStorage):
 
     @staticmethod
     def _copy_data(data: Optional[Dict]) -> dict:
-        return dict(data or {})
+        return deepcopy(dict(data or {}))
 
     async def has_vertex(self, v_id: Any) -> bool:
         return self._normalize_vertex_id(v_id) in self._vertex_data
@@ -30,7 +31,7 @@ class NebulaHypergraphStorage(BaseHypergraphStorage):
         v_key = self._normalize_vertex_id(v_id)
         if v_key not in self._vertex_data:
             return default
-        return self._vertex_data[v_key].copy()
+        return self._copy_data(self._vertex_data[v_key])
 
     async def get_hyperedge(
         self, e_tuple: Union[List, Set, Tuple], default: Any = None
@@ -38,7 +39,7 @@ class NebulaHypergraphStorage(BaseHypergraphStorage):
         e_key = normalize_id_set(e_tuple)
         if e_key not in self._hyperedge_data:
             return default
-        return self._hyperedge_data[e_key].copy()
+        return self._copy_data(self._hyperedge_data[e_key])
 
     async def get_all_vertices(self):
         return sorted(self._vertex_data)
@@ -55,16 +56,14 @@ class NebulaHypergraphStorage(BaseHypergraphStorage):
     async def upsert_vertex(self, v_id: Any, v_data: Optional[Dict] = None):
         v_key = self._normalize_vertex_id(v_id)
         self._vertex_data[v_key] = self._copy_data(v_data)
-        return self._vertex_data[v_key].copy()
+        return self._copy_data(self._vertex_data[v_key])
 
     async def upsert_hyperedge(
         self, e_tuple: Union[List, Set, Tuple], e_data: Optional[Dict] = None
     ):
         e_key = normalize_id_set(e_tuple)
-        for v_key in e_key:
-            self._vertex_data.setdefault(v_key, {})
         self._hyperedge_data[e_key] = self._copy_data(e_data)
-        return self._hyperedge_data[e_key].copy()
+        return self._copy_data(self._hyperedge_data[e_key])
 
     async def remove_vertex(self, v_id: Any):
         v_key = self._normalize_vertex_id(v_id)

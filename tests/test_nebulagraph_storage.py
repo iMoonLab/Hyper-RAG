@@ -35,35 +35,66 @@ class NebulaHypergraphStorageTest(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_vertex_round_trip_copies_data(self):
-        data = {"entity_type": "Person", "description": "alpha"}
+        data = {
+            "entity_type": "Person",
+            "description": "alpha",
+            "additional_properties": {"rank": 1},
+        }
 
         await self.storage.upsert_vertex("A", data)
         data["description"] = "mutated"
+        data["additional_properties"]["rank"] = 2
 
         self.assertTrue(await self.storage.has_vertex("A"))
         self.assertEqual(
-            {"entity_type": "Person", "description": "alpha"},
+            {
+                "entity_type": "Person",
+                "description": "alpha",
+                "additional_properties": {"rank": 1},
+            },
             await self.storage.get_vertex("A"),
         )
 
         returned = await self.storage.get_vertex("A")
         returned["description"] = "leaked"
+        returned["additional_properties"]["rank"] = 3
         self.assertEqual("alpha", (await self.storage.get_vertex("A"))["description"])
+        self.assertEqual(
+            1,
+            (await self.storage.get_vertex("A"))["additional_properties"]["rank"],
+        )
         self.assertEqual("missing", await self.storage.get_vertex("missing", "missing"))
 
     async def test_hyperedge_round_trip_is_order_independent_and_copies_data(self):
-        data = {"weight": 2}
+        data = {"weight": 2, "metadata": {"rank": 1}}
 
         await self.storage.upsert_hyperedge(("B", "A"), data)
         data["weight"] = 7
+        data["metadata"]["rank"] = 2
 
         self.assertTrue(await self.storage.has_hyperedge(("A", "B")))
-        self.assertEqual({"weight": 2}, await self.storage.get_hyperedge(("A", "B")))
+        self.assertEqual(
+            {"weight": 2, "metadata": {"rank": 1}},
+            await self.storage.get_hyperedge(("A", "B")),
+        )
 
         returned = await self.storage.get_hyperedge(("B", "A"))
         returned["weight"] = 9
+        returned["metadata"]["rank"] = 3
         self.assertEqual(2, (await self.storage.get_hyperedge(("A", "B")))["weight"])
+        self.assertEqual(
+            1,
+            (await self.storage.get_hyperedge(("A", "B")))["metadata"]["rank"],
+        )
         self.assertEqual("missing", await self.storage.get_hyperedge(("X", "Y"), "missing"))
+
+    async def test_hyperedge_upsert_does_not_create_empty_vertices(self):
+        await self.storage.upsert_hyperedge(("A", "B"), {"weight": 1})
+
+        self.assertFalse(await self.storage.has_vertex("A"))
+        self.assertFalse(await self.storage.has_vertex("B"))
+        self.assertEqual(0, await self.storage.get_num_of_vertices())
+        self.assertEqual(["A", "B"], await self.storage.get_nbr_v_of_hyperedge(("B", "A")))
 
     async def test_neighbors_and_degree_use_normalized_order(self):
         for vertex_id in ("A", "B", "C"):
