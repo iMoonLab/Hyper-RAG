@@ -20,7 +20,9 @@ NebulaGraph support is intentionally conservative. The current migration path is
 `nebulagraph-serving` requires both:
 
 - Backend mode set to `nebulagraph-serving`.
-- The validation flag configured to allow NebulaGraph serving.
+- The validation flag configured to allow NebulaGraph serving:
+  - `nebulagraph_validated` for backend/global config.
+  - `nebulaGraphValidated` for Web UI settings.
 
 Do not enable `nebulagraph-serving` until storage parity and retrieval parity are implemented and passing. If NebulaGraph is unavailable, unvalidated, or misconfigured, use `hgdb` so `.hgdb` remains the serving backend.
 
