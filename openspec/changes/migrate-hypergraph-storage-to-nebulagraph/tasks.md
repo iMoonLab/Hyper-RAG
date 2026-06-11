@@ -50,7 +50,7 @@
 
 ## 6. Quality Gate And Rollback
 
-- [x] 6.1 Define configurable acceptance thresholds for storage parity and retrieval parity.
+- [ ] 6.1 Define configurable acceptance thresholds for storage parity and retrieval parity.
 - [ ] 6.2 Block NebulaGraph serving when parity checks fail.
 - [x] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
 - [ ] 6.4 Verify rollback by switching configuration back to `.hgdb` without changing Web UI or API request/response contracts.
