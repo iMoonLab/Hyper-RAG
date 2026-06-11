@@ -4,6 +4,7 @@ aioboto3
 aiohttp
 numpy
 nano-vectordb
+nebula3-python
 openai
 tenacity
 tiktoken

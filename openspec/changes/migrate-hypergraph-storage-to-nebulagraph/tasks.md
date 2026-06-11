@@ -64,4 +64,4 @@
 - [ ] 7.4 Add integration tests comparing `.hgdb` and NebulaGraph retrieval outputs for a fixed fixture dataset.
 - [x] 7.5 Add tests that prove mirror-only and dual-read modes keep `.hgdb` as the serving backend.
 - [x] 7.6 Add tests for deterministic output ordering and degree semantics.
-- [ ] 7.7 Document NebulaGraph setup, schema initialization, mirror-only migration, validation, enablement, failure policy, and rollback steps.
+- [x] 7.7 Document NebulaGraph setup, schema initialization, mirror-only migration, validation, enablement, failure policy, and rollback steps.
