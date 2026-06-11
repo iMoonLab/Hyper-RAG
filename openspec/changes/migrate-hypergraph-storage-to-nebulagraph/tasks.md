@@ -54,7 +54,7 @@
 - [ ] 6.2 Block NebulaGraph serving when parity checks fail.
 - [x] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
 - [ ] 6.4 Verify rollback by switching configuration back to `.hgdb` without changing Web UI or API request/response contracts.
-- [x] 6.5 Verify `.hgdb` remains serving when NebulaGraph connection, schema validation, or migration validation fails.
+- [ ] 6.5 Verify `.hgdb` remains serving when NebulaGraph connection, schema validation, or migration validation fails.
 
 ## 7. Tests And Documentation
 

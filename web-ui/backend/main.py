@@ -13,6 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List
 from io import StringIO
+from settings_helpers import merge_settings_for_save
 
 # 添加 HyperRAG 相关导入
 # 若尚不可导入，则向上逐级查找含有 hyperrag 包的目录，并把“其父目录”加到 sys.path
@@ -47,7 +48,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Hyper-RAG"}
+    return {"message": "Hyper-Graph"}
 
 
 @app.get("/db")
@@ -259,8 +260,14 @@ class SettingsModel(BaseModel):
     maxTokens: int = 2000
     temperature: float = 0.7
     # HyperRAG 嵌入模型设置
-    embeddingModel: str = "text-embedding-3-small"
-    embeddingDim: int = 1536
+    embeddingModel: str = "text-embedding-v4"
+    embeddingDim: int = 1024
+    # Hypergraph backend settings
+    hypergraphBackendMode: str = "hgdb"
+    nebulaGraphValidated: bool = False
+
+    class Config:
+        extra = "allow"
 
 class APITestModel(BaseModel):
     apiKey: str
@@ -295,8 +302,8 @@ async def get_settings():
                 "selectedDatabase": "",
                 "maxTokens": 2000,
                 "temperature": 0.7,
-                "embeddingModel": "text-embedding-3-small",
-                "embeddingDim": 1536
+                "embeddingModel": "text-embedding-v4",
+                "embeddingDim": 1024
             }
     except Exception as e:
         return {"success": False, "message": str(e)}
@@ -307,19 +314,13 @@ async def save_settings(settings: SettingsModel):
     保存系统设置
     """
     try:
+        existing_settings = {}
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                existing_settings = json.load(f)
+
         settings_dict = settings.dict()
-        
-        # 如果apiKey是***，则保持原有的apiKey不变
-        if settings_dict.get('apiKey') == '***':
-            # 读取现有设置中的apiKey
-            if os.path.exists(SETTINGS_FILE):
-                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    existing_settings = json.load(f)
-                # 保持原有的apiKey
-                settings_dict['apiKey'] = existing_settings.get('apiKey', '')
-            else:
-                # 如果没有现有设置文件，则设为空字符串
-                settings_dict['apiKey'] = ''
+        settings_dict = merge_settings_for_save(existing_settings, settings_dict)
         
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(settings_dict, f, ensure_ascii=False, indent=2)
