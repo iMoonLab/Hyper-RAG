@@ -34,7 +34,7 @@
 - [x] 4.1 Wire backend selection into `HyperRAG` initialization without changing public query or insert APIs.
 - [x] 4.2 Wire Web UI backend initialization to select `.hgdb` or NebulaGraph per configured database.
 - [x] 4.3 Keep `NanoVectorDBStorage` and text chunk JSON storage unchanged for the initial migration.
-- [ ] 4.4 Add diagnostics that expose selected hypergraph backend and NebulaGraph connection status.
+- [x] 4.4 Add diagnostics that expose selected hypergraph backend and NebulaGraph connection status.
 - [x] 4.5 Ensure mirror-only and dual-read modes never serve user-facing query responses from NebulaGraph.
 - [ ] 4.6 Verify prompt construction, query routing, vector recall, text chunk lookup, and answer generation remain unchanged.
 
@@ -50,7 +50,7 @@
 
 ## 6. Quality Gate And Rollback
 
-- [ ] 6.1 Define configurable acceptance thresholds for storage parity and retrieval parity.
+- [x] 6.1 Define configurable acceptance thresholds for storage parity and retrieval parity.
 - [ ] 6.2 Block NebulaGraph serving when parity checks fail.
 - [x] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
 - [ ] 6.4 Verify rollback by switching configuration back to `.hgdb` without changing Web UI or API request/response contracts.

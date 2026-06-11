@@ -36,6 +36,17 @@ except ImportError as e:
 # 设置文件路径
 SETTINGS_FILE = "settings.json"
 
+
+def _load_settings_defaults():
+    if not os.path.exists(SETTINGS_FILE):
+        return {}
+    try:
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -666,12 +677,15 @@ async def get_hyperrag_status(database: str = None):
             if database in hyperrag_instances:
                 instance = hyperrag_instances[database]
                 status["initialized"] = True
+                settings = _load_settings_defaults()
                 try:
                     status["details"] = {
                         "chunk_token_size": instance.chunk_token_size,
                         "llm_model_name": instance.llm_model_name,
                         "embedding_func_available": instance.embedding_func is not None,
-                        "working_dir": os.path.join(hyperrag_working_dir, database.replace('.hgdb', ''))
+                        "working_dir": os.path.join(hyperrag_working_dir, database.replace('.hgdb', '')),
+                        "hypergraph_backend_mode": settings.get("hypergraphBackendMode", "hgdb"),
+                        "nebula_graph_validated": settings.get("nebulaGraphValidated", False),
                     }
                 except Exception as e:
                     status["details"] = f"Error getting details: {str(e)}"

@@ -13,6 +13,26 @@ class ParityReport:
     failures: list[str] = field(default_factory=list)
 
 
+@dataclass
+class RetrievalParityResult:
+    mode: str
+    entity_overlap: float
+    hyperedge_overlap: float
+    text_unit_overlap: float
+    context_diff: str
+    answer_score: float | None
+
+    def passed(self, threshold: float) -> bool:
+        base_overlaps_pass = (
+            self.entity_overlap >= threshold
+            and self.hyperedge_overlap >= threshold
+            and self.text_unit_overlap >= threshold
+        )
+        if self.answer_score is None:
+            return base_overlaps_pass
+        return base_overlaps_pass and self.answer_score >= threshold
+
+
 def _format_hyperedge(id_set: Iterable[str]) -> str:
     return repr(tuple(id_set))
 
@@ -117,4 +137,4 @@ async def compare_storage_backends(
     return ParityReport(passed=not failures, failures=failures)
 
 
-__all__ = ["ParityReport", "compare_storage_backends"]
+__all__ = ["ParityReport", "RetrievalParityResult", "compare_storage_backends"]
