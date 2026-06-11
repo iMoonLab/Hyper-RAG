@@ -48,6 +48,18 @@ class SettingsHelpersTest(unittest.TestCase):
         self.assertEqual("dual-read", merged["hypergraphBackendMode"])
         self.assertFalse(merged["nebulaGraphValidated"])
 
+    def test_preserves_existing_nebulagraph_settings_when_omitted(self):
+        merged = merge_settings_for_save(
+            {
+                "hypergraphBackendMode": "nebulagraph-serving",
+                "nebulaGraphValidated": True,
+            },
+            {"modelName": "gpt-5-mini"},
+        )
+
+        self.assertEqual("nebulagraph-serving", merged["hypergraphBackendMode"])
+        self.assertTrue(merged["nebulaGraphValidated"])
+
 
 if __name__ == "__main__":
     unittest.main()

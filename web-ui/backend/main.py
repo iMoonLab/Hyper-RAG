@@ -319,7 +319,7 @@ async def save_settings(settings: SettingsModel):
             with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
                 existing_settings = json.load(f)
 
-        settings_dict = settings.dict()
+        settings_dict = settings.dict(exclude_unset=True)
         settings_dict = merge_settings_for_save(existing_settings, settings_dict)
         
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
