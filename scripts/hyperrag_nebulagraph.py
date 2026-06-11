@@ -39,14 +39,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     migrate_parser = subparsers.add_parser(
         "migrate",
-        help="Migrate a local .hgdb snapshot into NebulaGraph.",
+        help="Placeholder for future .hgdb to NebulaGraph migration wiring.",
     )
     migrate_parser.add_argument("--hgdb", required=True)
     migrate_parser.add_argument("--database", required=True)
 
     validate_parser = subparsers.add_parser(
         "validate",
-        help="Validate NebulaGraph data against a local .hgdb snapshot.",
+        help="Placeholder for future NebulaGraph validation wiring.",
     )
     validate_parser.add_argument("--hgdb", required=True)
     validate_parser.add_argument("--database", required=True)

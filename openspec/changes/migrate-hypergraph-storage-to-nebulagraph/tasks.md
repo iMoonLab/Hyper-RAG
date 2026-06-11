@@ -12,11 +12,11 @@
 - [x] 2.1 Implement a reader that loads existing `hypergraph_chunk_entity_relation.hgdb` data through the current HypergraphDB format.
 - [x] 2.2 Generate stable Entity vertex IDs from canonical entity names and database scope.
 - [x] 2.3 Generate stable Hyperedge vertex IDs from normalized `id_set` values and database scope.
-- [x] 2.4 Upsert Entity vertices while preserving `entity_type`, `description`, `source_id`, and `additional_properties`.
-- [x] 2.5 Upsert Hyperedge vertices while preserving `id_set`, `description`, `keywords`, `weight`, `source_id`, and arity.
-- [x] 2.6 Upsert membership relationships between each Entity vertex and its Hyperedge vertex.
+- [ ] 2.4 Upsert Entity vertices while preserving `entity_type`, `description`, `source_id`, and `additional_properties`.
+- [ ] 2.5 Upsert Hyperedge vertices while preserving `id_set`, `description`, `keywords`, `weight`, `source_id`, and arity.
+- [ ] 2.6 Upsert membership relationships between each Entity vertex and its Hyperedge vertex.
 - [x] 2.7 Make migration repeatable without creating duplicate logical entities or hyperedges.
-- [x] 2.8 Add mirror-only migration execution that writes NebulaGraph data while leaving `.hgdb` as the serving backend.
+- [ ] 2.8 Add mirror-only migration execution that writes NebulaGraph data while leaving `.hgdb` as the serving backend.
 
 ## 3. NebulaGraph Storage Adapter
 
@@ -34,7 +34,7 @@
 - [x] 4.1 Wire backend selection into `HyperRAG` initialization without changing public query or insert APIs.
 - [x] 4.2 Wire Web UI backend initialization to select `.hgdb` or NebulaGraph per configured database.
 - [x] 4.3 Keep `NanoVectorDBStorage` and text chunk JSON storage unchanged for the initial migration.
-- [x] 4.4 Add diagnostics that expose selected hypergraph backend and NebulaGraph connection status.
+- [ ] 4.4 Add diagnostics that expose selected hypergraph backend and NebulaGraph connection status.
 - [x] 4.5 Ensure mirror-only and dual-read modes never serve user-facing query responses from NebulaGraph.
 - [ ] 4.6 Verify prompt construction, query routing, vector recall, text chunk lookup, and answer generation remain unchanged.
 
@@ -52,7 +52,7 @@
 
 - [ ] 6.1 Define configurable acceptance thresholds for storage parity and retrieval parity.
 - [ ] 6.2 Block NebulaGraph serving when parity checks fail.
-- [x] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
+- [ ] 6.3 Add an opt-in switch to enable NebulaGraph serving only after validation passes.
 - [ ] 6.4 Verify rollback by switching configuration back to `.hgdb` without changing Web UI or API request/response contracts.
 - [ ] 6.5 Verify `.hgdb` remains serving when NebulaGraph connection, schema validation, or migration validation fails.
 
