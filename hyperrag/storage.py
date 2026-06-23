@@ -1,3 +1,11 @@
+"""HyperRAG 的三类本地存储实现。
+
+这个项目没有把所有数据放进同一个数据库，而是拆成三层：
+1. JsonKVStorage：保存原文、切块文本、LLM 缓存，文件名是 kv_store_*.json。
+2. NanoVectorDBStorage：保存 chunk/entity/relationship 向量，文件名是 vdb_*.json。
+3. HypergraphStorage：保存实体和超边结构，文件名是 hypergraph_*.hgdb。
+"""
+
 import asyncio
 import html
 import os
@@ -16,6 +24,13 @@ from .base import (
 
 @dataclass
 class JsonKVStorage(BaseKVStorage):
+    """简单 JSON KV 存储。
+
+    namespace 决定文件名：
+    - full_docs -> kv_store_full_docs.json
+    - text_chunks -> kv_store_text_chunks.json
+    - llm_response_cache -> kv_store_llm_response_cache.json
+    """
     def __post_init__(self):
         working_dir = self.global_config["working_dir"]
         self._file_name = os.path.join(working_dir, f"kv_store_{self.namespace}.json")
@@ -57,6 +72,13 @@ class JsonKVStorage(BaseKVStorage):
 
 @dataclass
 class NanoVectorDBStorage(BaseVectorStorage):
+    """NanoVectorDB 的项目适配层。
+
+    查询不是 BM25，也不是 HNSW；当前 nano-vectordb 使用 numpy 矩阵做
+    cosine similarity 全量排序。meta_fields 用于保留回查超图所需的字段：
+    - entities 向量库保留 entity_name
+    - relationships 向量库保留 id_set
+    """
     cosine_better_than_threshold: float = 0.2
 
     def __post_init__(self):
@@ -72,6 +94,7 @@ class NanoVectorDBStorage(BaseVectorStorage):
         )
 
     async def upsert(self, data: dict[str, dict]):
+        """把数据的 content 字段 embedding 后写入向量库。"""
         logger.info(f"Inserting {len(data)} vectors to {self.namespace}")
         if not len(data):
             logger.warning("You insert an empty data to vector DB")
@@ -98,6 +121,7 @@ class NanoVectorDBStorage(BaseVectorStorage):
         return results
 
     async def query(self, query: str, top_k=5):
+        """查询文本先转 embedding，再按 cosine 相似度返回 top_k。"""
         embedding = await self.embedding_func([query])
         embedding = embedding[0]
         results = self._client.query(
@@ -116,9 +140,16 @@ class NanoVectorDBStorage(BaseVectorStorage):
 
 @dataclass
 class HypergraphStorage(BaseHypergraphStorage):
+    """HypergraphDB 的项目适配层。
+
+    在 HyperRAG 里：
+    - vertex 表示实体，例如疾病、症状、医学概念。
+    - hyperedge 表示实体集合之间的关系，可连接两个或多个实体。
+    """
 
     @staticmethod
     def load_hypergraph(file_name) -> HypergraphDB:
+        """如果已有 .hgdb 文件就加载历史超图，否则返回 None。"""
         if os.path.exists(file_name):
             pre_hypergraph = HypergraphDB()
             pre_hypergraph.load(file_name)
@@ -127,6 +158,7 @@ class HypergraphStorage(BaseHypergraphStorage):
 
     @staticmethod
     def write_hypergraph(hypergraph: HypergraphDB, file_name):
+        """把内存中的 HypergraphDB 保存到 .hgdb 文件。"""
         logger.info(
             f"Writing hypergraph with {hypergraph.num_v} vertices, {hypergraph.num_e} hyperedges"
         )
@@ -171,9 +203,11 @@ class HypergraphStorage(BaseHypergraphStorage):
         return self._hg.num_e
 
     async def upsert_vertex(self, v_id: Any, v_data: Optional[Dict] = None) :
+        # 写入实体节点。
         return self._hg.add_v(v_id, v_data)
 
     async def upsert_hyperedge(self, e_tuple: Union[List, Set, Tuple], e_data: Optional[Dict] = None) :
+        # 写入超边；e_tuple 是这条关系连接的实体集合。
         return self._hg.add_e(e_tuple, e_data)
 
     async def remove_vertex(self, v_id: Any) :

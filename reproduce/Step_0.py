@@ -39,6 +39,7 @@ def extract_unique_contexts(input_directory, output_directory):
         try:
             with open(file_path, "r", encoding="utf-8") as infile:
                 for line_number, line in enumerate(infile, start=1):
+                    # 清理内容2边无关字符
                     line = line.strip()
                     if not line:
                         continue
@@ -46,6 +47,7 @@ def extract_unique_contexts(input_directory, output_directory):
                         # 原始数据每行一个 JSON；这里只取 context 作为建库语料。
                         json_obj = json.loads(line)
                         context = json_obj.get("context")
+                        # 去重
                         if context and context not in unique_contexts_dict:
                             unique_contexts_dict[context] = None
                     except json.JSONDecodeError as e:

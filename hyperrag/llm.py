@@ -1,3 +1,13 @@
+"""LLM 和 Embedding 调用封装。
+
+这个文件把不同模型供应商的接口统一成 HyperRAG 可调用的异步函数：
+- complete 函数：输入 prompt/system/history，输出文本。
+- embedding 函数：输入 texts，输出 numpy 向量矩阵。
+- cache 逻辑：通过 hashing_kv 缓存 LLM 返回，减少重复请求。
+
+注意：这里不负责检索逻辑，只负责“怎么调用模型”。
+"""
+
 import os
 import copy
 from functools import lru_cache
@@ -45,6 +55,7 @@ async def openai_complete_if_cache(
     api_key=None,
     **kwargs,
 ) -> str:
+    """OpenAI-compatible 非流式聊天接口，并支持 LLM 响应缓存。"""
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
 
@@ -52,12 +63,14 @@ async def openai_complete_if_cache(
         AsyncOpenAI() if base_url is None else AsyncOpenAI(base_url=base_url)
     )
     hashing_kv: BaseKVStorage = kwargs.pop("hashing_kv", None)
+    # OpenAI chat API 的标准 messages 结构：system -> history -> user。
     messages = []
     if system_prompt is not None:
         messages.append({"role": "system", "content": system_prompt})
     messages.extend(history_messages)
     messages.append({"role": "user", "content": prompt})
     if hashing_kv is not None:
+        # 缓存 key 与模型名和完整 messages 相关，避免不同 prompt 互相污染。
         args_hash = compute_args_hash(model, messages)
         if_cache_return = await hashing_kv.get_by_id(args_hash)
         if if_cache_return is not None:
@@ -68,6 +81,7 @@ async def openai_complete_if_cache(
     )
 
     if hashing_kv is not None:
+        # 只缓存最终文本，不缓存完整响应对象。
         await hashing_kv.upsert(
             {args_hash: {"return": response.choices[0].message.content, "model": model}}
         )
@@ -83,6 +97,8 @@ async def openai_complete_stream_if_cache(
     chunk_size: int = 32,
     **kwargs,
 ):
+    # 流式版本同样支持缓存：命中缓存时按 chunk_size 切块返回；
+    # 未命中时走真实 stream，并在结束后把完整文本写入缓存。
     """
     OpenAI-compatible 流式输出（async generator）
     - 命中缓存：按 chunk_size 分块 yield
@@ -150,6 +166,7 @@ async def azure_openai_complete_if_cache(
     api_key=None,
     **kwargs,
 ):
+    """Azure OpenAI 非流式聊天接口，逻辑与 openai_complete_if_cache 类似。"""
     if api_key:
         os.environ["AZURE_OPENAI_API_KEY"] = api_key
     if base_url:
@@ -186,7 +203,7 @@ async def azure_openai_complete_if_cache(
 
 
 class BedrockError(Exception):
-    """Generic error for issues related to Amazon Bedrock"""
+    """Amazon Bedrock 调用失败时用于触发 tenacity 重试的统一异常。"""
 
 
 @retry(
@@ -204,6 +221,7 @@ async def bedrock_complete_if_cache(
     aws_session_token=None,
     **kwargs,
 ) -> str:
+    """Amazon Bedrock Converse API 封装，并支持 LLM 响应缓存。"""
     os.environ["AWS_ACCESS_KEY_ID"] = os.environ.get(
         "AWS_ACCESS_KEY_ID", aws_access_key_id
     )
@@ -277,6 +295,7 @@ async def bedrock_complete_if_cache(
 async def gpt_4o_complete(
     prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
+    """默认 OpenAI gpt-4o 快捷封装。"""
 
     return await openai_complete_if_cache(
         "gpt-4o",
@@ -291,6 +310,7 @@ async def gpt_4o_complete(
 async def gpt_4o_mini_complete(
     prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
+    """默认 OpenAI gpt-4o-mini 快捷封装；HyperRAG 默认使用它。"""
     return await openai_complete_if_cache(
         "gpt-4o-mini",
         prompt,
@@ -303,6 +323,7 @@ async def gpt_4o_mini_complete(
 async def azure_openai_complete(
     prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
+    """Azure OpenAI 快捷封装。"""
     return await azure_openai_complete_if_cache(
         "conversation-4o-mini",
         prompt,
@@ -315,6 +336,7 @@ async def azure_openai_complete(
 async def bedrock_complete(
     prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
+    """Amazon Bedrock 快捷封装。"""
     return await bedrock_complete_if_cache(
         "anthropic.claude-3-haiku-20240307-v1:0",
         prompt,
@@ -336,6 +358,7 @@ async def openai_embedding(
     base_url: str = None,
     api_key: str = None,
 ) -> np.ndarray:
+    """OpenAI-compatible embedding 接口，返回 numpy 向量矩阵。"""
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
 
@@ -360,6 +383,7 @@ async def azure_openai_embedding(
     base_url: str = None,
     api_key: str = None,
 ) -> np.ndarray:
+    """Azure OpenAI embedding 接口。"""
     if api_key:
         os.environ["AZURE_OPENAI_API_KEY"] = api_key
     if base_url:
@@ -389,6 +413,7 @@ async def siliconcloud_embedding(
     max_token_size: int = 512,
     api_key: str = None,
 ) -> np.ndarray:
+    """SiliconCloud embedding 接口，手动把 base64 float 向量解码成 numpy 数组。"""
     if api_key and not api_key.startswith("Bearer "):
         api_key = "Bearer " + api_key
 
@@ -428,6 +453,7 @@ async def bedrock_embedding(
     aws_secret_access_key=None,
     aws_session_token=None,
 ) -> np.ndarray:
+    """Amazon Bedrock embedding 接口，兼容 Amazon/Cohere 等 provider。"""
     os.environ["AWS_ACCESS_KEY_ID"] = os.environ.get(
         "AWS_ACCESS_KEY_ID", aws_access_key_id
     )
@@ -543,16 +569,19 @@ class MultiModel:
     """
 
     def __init__(self, models: List[Model]):
+        """传入多个模型配置，后续调用时轮询使用。"""
         self._models = models
         self._current_model = 0
 
     def _next_model(self):
+        """返回下一个模型，实现简单 round-robin。"""
         self._current_model = (self._current_model + 1) % len(self._models)
         return self._models[self._current_model]
 
     async def llm_model_func(
         self, prompt, system_prompt=None, history_messages=[], **kwargs
     ) -> str:
+        """符合 HyperRAG 期望签名的多模型 LLM 函数。"""
         kwargs.pop("model", None)  # stop from overwriting the custom model name
         next_model = self._next_model()
         args = dict(

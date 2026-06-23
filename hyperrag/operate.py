@@ -1,3 +1,19 @@
+"""HyperRAG 的核心算法流程。
+
+这个文件负责两条主链路：
+
+1. 建库链路：
+   原文 -> token 切块 -> LLM 抽实体/低阶超边/高阶超边
+   -> 合并实体和关系 -> 写入超图 + 实体/关系向量库。
+
+2. 查询链路：
+   问题 -> LLM 抽 low/high keywords
+   -> low keywords 查实体向量库，high keywords 查关系向量库
+   -> 回 HypergraphDB 扩展 vertex/hyperedge/neighbor/source_id
+   -> 回 text_chunks KV 找原文 chunk
+   -> 拼 Entities/Relationships/Sources 给 LLM 回答。
+"""
+
 import sys
 import asyncio
 import json
@@ -34,6 +50,11 @@ from .prompt import GRAPH_FIELD_SEP, PROMPTS
 def chunking_by_token_size(
     content: str, overlap_token_size=128, max_token_size=1024, tiktoken_model="gpt-4o"
 ):
+    """按 token 长度切块。
+
+    注意：这里不是语义切分，而是固定 token 窗口 + overlap。
+    返回的每个 chunk 会带 tokens、content、chunk_order_index。
+    """
     tokens = encode_string_by_tiktoken(content, model_name=tiktoken_model)
     results = []
     for index, start in enumerate(
@@ -57,6 +78,7 @@ async def _handle_entity_summary(
     description: str,
     global_config: dict,
 ) -> str:
+    """当同名实体描述过长时，用 LLM 压缩实体 description。"""
     use_llm_func: callable = global_config["llm_model_func"]
     llm_max_tokens = global_config["llm_model_max_token_size"]
     tiktoken_model_name = global_config["tiktoken_model_name"]
@@ -87,6 +109,7 @@ async def _handle_entity_additional_properties(
     additional_properties: str,
     global_config: dict,
 ) -> str:
+    """当实体附加属性过长时，用 LLM 压缩 additional_properties。"""
     use_llm_func: callable = global_config["llm_model_func"]
     llm_max_tokens = global_config["llm_model_max_token_size"]
     tiktoken_model_name = global_config["tiktoken_model_name"]
@@ -117,6 +140,7 @@ async def _handle_relation_summary(
     description: str,
     global_config: dict,
 ) -> str:
+    """当关系/超边描述过长时，用 LLM 压缩 relation description。"""
     use_llm_func: callable = global_config["llm_model_func"]
     llm_max_tokens = global_config["llm_model_max_token_size"]
     tiktoken_model_name = global_config["tiktoken_model_name"]
@@ -147,6 +171,7 @@ async def _handle_relation_keywords_summary(
     keywords: str,
     global_config: dict,
 ) -> str:
+    """当关系关键词过长时，用 LLM 压缩 keywords。"""
     use_llm_func: callable = global_config["llm_model_func"]
     llm_max_tokens = global_config["llm_model_max_token_size"]
     tiktoken_model_name = global_config["tiktoken_model_name"]
@@ -175,6 +200,7 @@ async def _handle_single_entity_extraction(
     record_attributes: list[str],
     chunk_key: str,
 ):
+    """把 LLM 抽取结果中的 Entity 记录转换成实体 dict。"""
     if len(record_attributes) < 4 or record_attributes[0] != '"Entity"' :
         return None
     # add this record as a node in the G
@@ -199,6 +225,7 @@ async def _handle_single_relationship_extraction_low(
     record_attributes: list[str],
     chunk_key: str,
 ):
+    """把 Low-order Hyperedge 记录转换成低阶超边 dict。"""
     if len(record_attributes) < 6 or record_attributes[0] != '"Low-order Hyperedge"':
         return None
     # add this record as hyperedge
@@ -226,6 +253,7 @@ async def _handle_single_relationship_extraction_high(
     record_attributes: list[str],
     chunk_key: str,
 ):
+    """把 High-order Hyperedge 记录转换成高阶超边 dict。"""
     if len(record_attributes) < 7 or record_attributes[0] != '"High-order Hyperedge"':
         return None
     # add this record as hyperedge
@@ -255,6 +283,11 @@ async def _merge_nodes_then_upsert(
     knowledge_hypergraph_inst,
     global_config: dict,
 ):
+    """合并同名实体并写入超图 vertex。
+
+    输入是同一个 entity_name 在多个 chunk 中抽到的多条实体记录。
+    输出会用于 entities_vdb：调用方会把实体描述组装成可 embedding 文本。
+    """
     already_entity_types = []
     already_source_ids = []
     already_description = []
@@ -334,6 +367,11 @@ async def _merge_edges_then_upsert(
     knowledge_hypergraph_inst,
     global_config: dict,
 ):
+    """合并同一个实体集合的关系并写入超图 hyperedge。
+
+    id_set 是超边连接的实体集合，例如 ("A", "B", "C")。
+    如果某些实体还不存在，会先补 UNKNOWN vertex，保证超边可以挂载。
+    """
     already_weights = []
     already_source_ids = []
     already_description = []
@@ -406,6 +444,14 @@ async def extract_entities(
     relationships_vdb: BaseVectorStorage,
     global_config: dict,
 ) -> BaseHypergraphStorage | None:
+    """建库阶段的实体/超边抽取总入口。
+
+    对每个 chunk：
+    1. 用 LLM 按 prompt 抽 Entity、Low-order Hyperedge、High-order Hyperedge。
+    2. 解析 LLM 输出记录。
+    3. 合并同名实体、同 id_set 关系。
+    4. 写入 HypergraphDB，并把实体/关系描述写入向量库。
+    """
     use_llm_func: callable = global_config["llm_model_func"]
     entity_extract_max_gleaning = global_config["entity_extract_max_gleaning"]
 
@@ -622,6 +668,11 @@ async def _build_entity_query_context(
     text_chunks_db: BaseKVStorage[TextChunkSchema],
     query_param: QueryParam,
 ):
+    """实体线查询：low_level_keywords -> entities_vdb -> vertex/超边/source chunks。
+
+    输入 query 是低阶关键词字符串。
+    输出是包含 context、entities、hyperedges、text_units 的结构化上下文包。
+    """
     results = await entities_vdb.query(query, top_k=query_param.top_k)
     if not len(results):
         return None
@@ -746,6 +797,7 @@ async def _find_most_related_text_unit_from_entities(
     text_chunks_db: BaseKVStorage[TextChunkSchema],
     knowledge_hypergraph_inst: BaseHypergraphStorage,
 ):
+    """根据实体 source_id 和邻接关系找最相关的原文 chunk。"""
     text_units = [
         split_string_by_multi_markers(dp["source_id"], [GRAPH_FIELD_SEP])
         for dp in node_datas
@@ -828,6 +880,7 @@ async def _find_most_related_edges_from_entities(
     query_param: QueryParam,
     knowledge_hypergraph_inst: BaseHypergraphStorage,
 ):
+    """从命中的实体出发，找它们连接的相关超边。"""
     all_related_edges = await asyncio.gather(
         *[knowledge_hypergraph_inst.get_nbr_e_of_vertex(dp['entity_name']) for dp in node_datas]
     )
@@ -868,6 +921,11 @@ async def _build_relation_query_context(
     text_chunks_db: BaseKVStorage[TextChunkSchema],
     query_param: QueryParam,
 ):
+    """关系线查询：high_level_keywords -> relationships_vdb -> hyperedge/entity/source chunks。
+
+    输入 keywords 是高阶关键词字符串。
+    输出同样是包含 context、entities、hyperedges、text_units 的结构化上下文包。
+    """
     results = await relationships_vdb.query(keywords, top_k=query_param.top_k)
 
     if not len(results):
@@ -995,6 +1053,7 @@ async def _find_most_related_entities_from_relationships(
     query_param: QueryParam,
     knowledge_hypergraph_inst: BaseHypergraphStorage,
 ):
+    """根据命中的超边找其连接的实体，并按度数和 token 限制筛选。"""
     entity_names = set()
     for e in edge_datas:
         for f in e["id_set"]:
@@ -1029,6 +1088,7 @@ async def _find_related_text_unit_from_relationships(
     text_chunks_db: BaseKVStorage[TextChunkSchema],
     knowledge_hypergraph_inst: BaseHypergraphStorage,
 ):
+    """根据超边 source_id 找相关原文 chunk。"""
     text_units = [
         split_string_by_multi_markers(dp["source_id"], [GRAPH_FIELD_SEP])
         for dp in edge_datas
@@ -1069,6 +1129,13 @@ async def hyper_query(
     query_param: QueryParam,
     global_config: dict,
 ):
+    """完整 Hyper-RAG 查询。
+
+    同时走两条线：
+    - low_level_keywords -> 实体向量库 -> 超图 vertex 扩展；
+    - high_level_keywords -> 关系向量库 -> 超图 hyperedge 扩展。
+    两条线合并后，把 Entities / Relationships / Sources 交给 LLM 回答。
+    """
     entity_context = None
     relation_context = None
     use_model_func = global_config["llm_model_func"]
@@ -1076,6 +1143,8 @@ async def hyper_query(
     kw_prompt_temp = PROMPTS["keywords_extraction"]
     kw_prompt = kw_prompt_temp.format(query=query)
 
+    # 第一步：先让 LLM 从用户问题里抽两类关键词。
+    # low_level_keywords 偏实体；high_level_keywords 偏关系/主题。
     result = await use_model_func(kw_prompt)
 
     try:
@@ -1112,6 +1181,8 @@ async def hyper_query(
         low_level_context: Retrieves vertices and their first-order neighbor hyperedges.
         high_level_context: Retrieves hyperedges and their first-order neighbor vertices.
         """
+        # 实体线输入：低阶关键词字符串。
+        # 实体线输出：相关实体、这些实体连接的超边、以及 source_id 对应的原文 chunk。
         entity_context = await _build_entity_query_context(
             entity_keywords,
             knowledge_hypergraph_inst,
@@ -1121,6 +1192,8 @@ async def hyper_query(
         )
 
     if relation_keywords:
+        # 关系线输入：高阶关键词字符串。
+        # 关系线输出：相关超边、超边连接的实体、以及 source_id 对应的原文 chunk。
         relation_context = await _build_relation_query_context(
             relation_keywords,
             knowledge_hypergraph_inst,
@@ -1135,6 +1208,7 @@ async def hyper_query(
     """
     context = combine_contexts(relation_context.get("context"), entity_context.get("context"))
 
+    # 保留结构化结果，供 Web-UI 展示检索证据和超图关系。
     contextJson = {
         "entities": deduplicate_by_key(entity_context.get("entities", []) + relation_context.get("entities", []), "entity_name"),
         "hyperedges": deduplicate_by_key(entity_context.get("hyperedges", []) + relation_context.get("hyperedges", []), "entity_set"),
@@ -1186,6 +1260,10 @@ async def hyper_query_stream(
     query_param: QueryParam,
     global_config: dict,
 ):
+    """完整 Hyper-RAG 的流式回答版本。
+
+    检索上下文仍然先完整构造，最后 LLM 生成阶段改为 async generator。
+    """
     entity_context = None
     relation_context = None
     use_model_func = global_config["llm_model_func"]
@@ -1304,6 +1382,11 @@ async def hyper_query_lite(
     query_param: QueryParam,
     global_config: dict,
 ) -> str:
+    """轻量 Hyper-RAG 查询。
+
+    主要走实体线：low_level_keywords -> entities_vdb -> vertex/邻接超边/source chunks。
+    相比 hyper_query，它不主动走 high_level_keywords 的关系向量检索。
+    """
 
     entity_context = None
     use_model_func = global_config["llm_model_func"]
@@ -1400,6 +1483,7 @@ async def graph_query(
     query_param: QueryParam,
     global_config: dict,
 ):
+    # Graph-RAG 对照查询：只保留二元关系，模拟传统图 RAG 的 pairwise 边。
     """
     检索和返回 hypergraph db 中的成对关系
     """
@@ -1623,6 +1707,7 @@ async def graph_query(
 
 
 def combine_contexts(relation_context, entity_context):
+    """合并关系线和实体线的 CSV 上下文。"""
     # Function to extract entities, relationships, and sources from context strings
 
     def extract_sections(context):
@@ -1688,6 +1773,7 @@ def combine_contexts(relation_context, entity_context):
 """
 
 def remove_after_sources(input_string: str) -> str:
+    # 截断 Sources 之后的内容，供部分展示/清理场景使用。
     """
     删除字符串中 '-----Sources-----' 及其之后的所有内容。
     """
@@ -1704,6 +1790,7 @@ async def naive_query(
     query_param: QueryParam,
     global_config: dict,
 ):
+    """普通 RAG 查询：query -> chunks_vdb -> text_chunks_db -> LLM。"""
     use_model_func = global_config["llm_model_func"]
     results = await chunks_vdb.query(query, top_k=query_param.top_k)
     if not len(results):
@@ -1752,6 +1839,7 @@ async def llm_query(
     query_param: QueryParam,
     global_config: dict,
 ):
+    # 纯 LLM 查询：不检索任何本地数据，作为无 RAG 基线。
     """
     只调用 LLM，不进行任何数据查询。
     """
@@ -1792,6 +1880,7 @@ async def hyper_query_lite_stream(
     query_param: QueryParam,
     global_config: dict,
 ):
+    # hyper_query_lite 的流式回答版本：检索逻辑相同，最终 LLM 逐块 yield。
     """
     hyper_query_lite 的流式版本：逻辑与 hyper_query_lite 相同，只把最后一步 LLM 生成改成 yield token
     """
@@ -1873,6 +1962,7 @@ async def naive_query_stream(
     query_param: QueryParam,
     global_config: dict,
 ):
+    # naive_query 的流式回答版本：先检索 chunk，再流式生成答案。
     """
     naive_query 的流式版本：先做 chunk 检索拿到 section，然后用 LLM stream 输出答案
     """
@@ -1923,6 +2013,7 @@ async def llm_query_stream(
     query_param: QueryParam,
     global_config: dict,
 ):
+    # llm_query 的流式回答版本：不检索，直接让 LLM 流式回答。
     """
     llm_query 的流式版本：不检索，直接按 rag_response（空 context）走流式输出
     """

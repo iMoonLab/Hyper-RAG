@@ -1,3 +1,14 @@
+"""HyperRAG 的通用工具函数。
+
+这里放的是跨模块复用的小工具：
+- 日志初始化
+- embedding 函数包装
+- JSON 读写
+- tiktoken 编解码
+- LLM 并发限制
+- CSV 上下文拼装/去重
+"""
+
 import asyncio
 import html
 import io
@@ -21,6 +32,7 @@ logger = logging.getLogger("hyper_rag")
 
 
 def set_logger(log_file: str):
+    """把 hyper_rag logger 输出到 working_dir/HyperRAG.log。"""
     logger.setLevel(logging.DEBUG)
 
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
@@ -37,6 +49,11 @@ def set_logger(log_file: str):
 
 @dataclass
 class EmbeddingFunc:
+    """给 embedding 函数附加维度和最大 token 信息的轻量包装。
+
+    NanoVectorDB 初始化时需要 embedding_dim；
+    建库/查询时仍然通过 func 真正调用 embedding 模型。
+    """
     embedding_dim: int
     max_token_size: int
     func: callable
@@ -46,7 +63,7 @@ class EmbeddingFunc:
 
 
 def locate_json_string_body_from_string(content: str) -> Union[str, None]:
-    """Locate the JSON string body from a string"""
+    """从 LLM 输出中截取最外层 JSON 字符串。"""
     maybe_json_str = re.search(r"{.*}", content, re.DOTALL)
     if maybe_json_str is not None:
         return maybe_json_str.group(0)
@@ -55,6 +72,7 @@ def locate_json_string_body_from_string(content: str) -> Union[str, None]:
 
 
 def convert_response_to_json(response: str) -> dict:
+    """把 LLM 输出解析成 JSON dict；解析失败会抛错。"""
     json_str = locate_json_string_body_from_string(response)
     assert json_str is not None, f"Unable to parse JSON from response: {response}"
     try:
@@ -66,15 +84,17 @@ def convert_response_to_json(response: str) -> dict:
 
 
 def compute_args_hash(*args):
+    """根据调用参数生成 hash，用作 LLM cache 的 key。"""
     return md5(str(args).encode()).hexdigest()
 
 
 def compute_mdhash_id(content, prefix: str = ""):
+    """根据文本内容生成稳定 ID；同样内容会得到同样 ID。"""
     return prefix + md5(content.encode()).hexdigest()
 
 
 def limit_async_func_call(max_size: int, waitting_time: float = 0.0001):
-    """Add restriction of maximum async calling times for a async func"""
+    """限制异步函数的最大并发数，主要用于 LLM 和 embedding API。"""
 
     def final_decro(func):
         """Not using async.Semaphore to aovid use nest-asyncio"""
@@ -119,7 +139,7 @@ def limit_async_gen_call(max_size: int):
 
 
 def wrap_embedding_func_with_attrs(**kwargs):
-    """Wrap a function with attributes"""
+    """把普通 embedding 函数包装成 EmbeddingFunc。"""
 
     def final_decro(func) -> EmbeddingFunc:
         new_func = EmbeddingFunc(**kwargs, func=func)
@@ -129,6 +149,7 @@ def wrap_embedding_func_with_attrs(**kwargs):
 
 
 def load_json(file_name):
+    """读取 JSON 文件；不存在时返回 None。"""
     if not os.path.exists(file_name):
         return None
     with open(file_name, encoding="utf-8") as f:
@@ -136,11 +157,13 @@ def load_json(file_name):
 
 
 def write_json(json_obj, file_name):
+    """以 UTF-8 写 JSON，保留中文字符。"""
     with open(file_name, "w", encoding="utf-8") as f:
         json.dump(json_obj, f, indent=2, ensure_ascii=False)
 
 
 def encode_string_by_tiktoken(content: str, model_name: str = "gpt-4o"):
+    """把文本编码成 token id 列表，用于切块和 token 长度控制。"""
     global ENCODER
     if ENCODER is None:
         ENCODER = tiktoken.encoding_for_model(model_name)
@@ -149,6 +172,7 @@ def encode_string_by_tiktoken(content: str, model_name: str = "gpt-4o"):
 
 
 def decode_tokens_by_tiktoken(tokens: list[int], model_name: str = "gpt-4o"):
+    """把 token id 列表还原成文本。"""
     global ENCODER
     if ENCODER is None:
         ENCODER = tiktoken.encoding_for_model(model_name)
@@ -157,6 +181,7 @@ def decode_tokens_by_tiktoken(tokens: list[int], model_name: str = "gpt-4o"):
 
 
 def pack_user_ass_to_openai_messages(*args: str):
+    """把 user/assistant 交替文本包装成 OpenAI messages 历史。"""
     roles = ["user", "assistant"]
     return [
         {"role": roles[i % 2], "content": content} for i, content in enumerate(args) #if content is not None
@@ -164,7 +189,7 @@ def pack_user_ass_to_openai_messages(*args: str):
 
 
 def split_string_by_multi_markers(content: str, markers: list[str]) -> list[str]:
-    """Split a string by multiple markers"""
+    """按多个分隔符切分字符串，并清理空片段。"""
     if not markers:
         return [content]
     results = re.split("|".join(re.escape(marker) for marker in markers), content)
@@ -174,8 +199,8 @@ def split_string_by_multi_markers(content: str, markers: list[str]) -> list[str]
 # Refer the utils functions of the official GraphRAG implementation:
 # https://github.com/microsoft/graphrag
 def clean_str(input: Any) -> str:
-    """Clean an input string by removing HTML escapes, control characters, and other unwanted characters."""
-    # If we get non-string input, just give it back
+    """清理 HTML 转义和控制字符，主要用于 LLM 抽取结果标准化。"""
+    # 非字符串直接返回，避免破坏上游传入的结构。
     if not isinstance(input, str):
         return input
 
@@ -185,11 +210,12 @@ def clean_str(input: Any) -> str:
 
 
 def is_float_regex(value):
+    """判断字符串是否可解析为浮点数。"""
     return bool(re.match(r"^[-+]?[0-9]*\.?[0-9]+$", value))
 
 
 def truncate_list_by_token_size(list_data: list, key: callable, max_token_size: int):
-    """Truncate a list of data by token size"""
+    """按 token 总量截断列表，避免拼给 LLM 的上下文过长。"""
     if max_token_size <= 0:
         return []
     tokens = 0
@@ -201,6 +227,7 @@ def truncate_list_by_token_size(list_data: list, key: callable, max_token_size: 
 
 
 def list_of_list_to_csv(data: List[List[str]]) -> str:
+    """把二维列表转成 CSV 字符串；operate.py 用它拼检索上下文。"""
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerows(data)
@@ -208,17 +235,23 @@ def list_of_list_to_csv(data: List[List[str]]) -> str:
 
 
 def csv_string_to_list(csv_string: str) -> List[List[str]]:
+    """把 CSV 字符串还原成二维列表。"""
     output = io.StringIO(csv_string)
     reader = csv.reader(output)
     return [row for row in reader]
 
 
 def save_data_to_file(data, file_name):
+    """保存调试/中间数据到 JSON 文件。"""
     with open(file_name, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 def xml_to_json(xml_file):
+    """把 GraphML/XML 图数据转换成 nodes/edges JSON。
+
+    这是兼容/迁移工具函数，不是 HyperRAG 主流程必经路径。
+    """
     try:
         tree = ET.parse(xml_file)
         root = tree.getroot()
@@ -279,6 +312,10 @@ def xml_to_json(xml_file):
 
 
 def process_combine_contexts(hl, ll):
+    """合并 high-level 和 low-level 检索上下文中的 CSV section。
+
+    hyper_query 会分别构造实体线和关系线的上下文，最后用这个函数去重合并。
+    """
     header = None
     list_hl = csv_string_to_list(hl.strip())
     list_ll = csv_string_to_list(ll.strip())
@@ -334,6 +371,10 @@ def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
         return new_loop
 
 def deduplicate_by_key(data_list, key_string):
+    """按指定字段对结构化检索结果去重。
+
+    用于合并实体线和关系线结果，例如 entity_name / entity_set / content。
+    """
     unique_data = []
     seen_keys = set()
 
