@@ -16,14 +16,14 @@ from datetime import datetime
 from functools import partial
 from typing import Type, cast
 
-from .operate import (
-    chunking_by_token_size,
-    extract_entities,
-    hyper_query_lite,
-    hyper_query,
-    naive_query,
-    graph_query,
-    llm_query,
+from .chunking import chunking_by_token_size
+from .indexing import extract_entities
+from .query_modes import graph_query, hyper_query, hyper_query_lite, llm_query, naive_query
+from .query_stream import (
+    hyper_query_lite_stream,
+    hyper_query_stream,
+    llm_query_stream,
+    naive_query_stream,
 )
 from .llm import (
     gpt_4o_mini_complete,
@@ -53,9 +53,6 @@ from .base import (
     QueryParam,
     BaseHypergraphStorage,
 )
-
-from .operate import hyper_query_stream, hyper_query_lite_stream, naive_query_stream, llm_query_stream
-
 
 def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
     """同步 API 调异步逻辑时使用的事件循环兜底函数。"""

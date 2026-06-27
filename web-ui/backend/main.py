@@ -1031,10 +1031,18 @@ def setup_comprehensive_logging():
     # 确保HyperRAG相关的所有子模块都能输出日志
     hyperrag_modules = [
         'hyperrag.base',
+        'hyperrag.chunking',
+        'hyperrag.extraction',
+        'hyperrag.graph_upsert',
         'hyperrag.hyperrag', 
+        'hyperrag.indexing',
         'hyperrag.llm',
         'hyperrag.operate',
         'hyperrag.prompt',
+        'hyperrag.query_context',
+        'hyperrag.query_keywords',
+        'hyperrag.query_modes',
+        'hyperrag.query_stream',
         'hyperrag.storage',
         'hyperrag.utils'
     ]
