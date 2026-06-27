@@ -23,6 +23,8 @@ def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs) ->
     response = openai_client.chat.completions.create(
         model=LLM_MODEL, messages=messages, **kwargs
     )
+    if not response.choices or response.choices[0].message is None:
+        raise ValueError("LLM returned empty or filtered response")
     return response.choices[0].message.content
 
 
