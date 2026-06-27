@@ -12,10 +12,13 @@ from tqdm import tqdm
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from my_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+from hyperrag.env import normalize_proxy_env
 try:
     from .pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 except ImportError:
     from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+
+normalize_proxy_env()
 
 
 def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs) -> str:

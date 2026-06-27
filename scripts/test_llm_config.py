@@ -12,7 +12,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from my_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+from hyperrag.env import normalize_proxy_env
 from openai import AsyncOpenAI
+
+normalize_proxy_env()
 
 
 async def main() -> None:
