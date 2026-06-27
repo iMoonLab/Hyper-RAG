@@ -25,6 +25,9 @@ from .storage import (
     HypergraphStorage,
 )
 
+from .nebulagraph_config import NebulaGraphSettings
+from .nebulagraph_storage import NebulaHypergraphStorage
+
 
 from .utils import (
     EmbeddingFunc,
@@ -44,6 +47,19 @@ from .base import (
 )
 
 from .operate import hyper_query_stream, hyper_query_lite_stream, naive_query_stream, llm_query_stream
+
+
+def resolve_hypergraph_storage_cls(global_config, default_cls):
+    addon_params = global_config.get("addon_params", {})
+    merged_config = dict(global_config)
+    if isinstance(addon_params, dict):
+        merged_config.update(addon_params)
+
+    settings = NebulaGraphSettings.from_config(merged_config)
+    if settings.serving_enabled:
+        return NebulaHypergraphStorage
+
+    return default_cls
 
 
 def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
@@ -137,7 +153,10 @@ class HyperRAG:
         """
             download from hgdb_path
         """
-        self.chunk_entity_relation_hypergraph = self.hypergraph_storage_cls(
+        resolved_hypergraph_storage_cls = resolve_hypergraph_storage_cls(
+            asdict(self), self.hypergraph_storage_cls
+        )
+        self.chunk_entity_relation_hypergraph = resolved_hypergraph_storage_cls(
             namespace="chunk_entity_relation", global_config=asdict(self)
         )
 

@@ -13,6 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List
 from io import StringIO
+from settings_helpers import merge_settings_for_save
 
 # 添加 HyperRAG 相关导入
 # 若尚不可导入，则向上逐级查找含有 hyperrag 包的目录，并把“其父目录”加到 sys.path
@@ -35,6 +36,17 @@ except ImportError as e:
 # 设置文件路径
 SETTINGS_FILE = "settings.json"
 
+
+def _load_settings_defaults():
+    if not os.path.exists(SETTINGS_FILE):
+        return {}
+    try:
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -47,7 +59,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Hyper-RAG"}
+    return {"message": "Hyper-Graph"}
 
 
 @app.get("/db")
@@ -259,8 +271,14 @@ class SettingsModel(BaseModel):
     maxTokens: int = 2000
     temperature: float = 0.7
     # HyperRAG 嵌入模型设置
-    embeddingModel: str = "text-embedding-3-small"
-    embeddingDim: int = 1536
+    embeddingModel: str = "text-embedding-v4"
+    embeddingDim: int = 1024
+    # Hypergraph backend settings
+    hypergraphBackendMode: str = "hgdb"
+    nebulaGraphValidated: bool = False
+
+    class Config:
+        extra = "allow"
 
 class APITestModel(BaseModel):
     apiKey: str
@@ -295,8 +313,8 @@ async def get_settings():
                 "selectedDatabase": "",
                 "maxTokens": 2000,
                 "temperature": 0.7,
-                "embeddingModel": "text-embedding-3-small",
-                "embeddingDim": 1536
+                "embeddingModel": "text-embedding-v4",
+                "embeddingDim": 1024
             }
     except Exception as e:
         return {"success": False, "message": str(e)}
@@ -307,19 +325,13 @@ async def save_settings(settings: SettingsModel):
     保存系统设置
     """
     try:
-        settings_dict = settings.dict()
-        
-        # 如果apiKey是***，则保持原有的apiKey不变
-        if settings_dict.get('apiKey') == '***':
-            # 读取现有设置中的apiKey
-            if os.path.exists(SETTINGS_FILE):
-                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    existing_settings = json.load(f)
-                # 保持原有的apiKey
-                settings_dict['apiKey'] = existing_settings.get('apiKey', '')
-            else:
-                # 如果没有现有设置文件，则设为空字符串
-                settings_dict['apiKey'] = ''
+        existing_settings = {}
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                existing_settings = json.load(f)
+
+        settings_dict = settings.dict(exclude_unset=True)
+        settings_dict = merge_settings_for_save(existing_settings, settings_dict)
         
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(settings_dict, f, ensure_ascii=False, indent=2)
@@ -533,6 +545,11 @@ def get_or_create_hyperrag(database: str = None):
                 max_token_size=8192,
                 func=get_hyperrag_embedding_func
             ),
+            addon_params={
+                "database_name": database,
+                "hypergraph_backend_mode": settings.get("hypergraphBackendMode", "hgdb"),
+                "nebulagraph_validated": settings.get("nebulaGraphValidated", False),
+            },
         )
         
         main_logger.info(f"HyperRAG实例创建完成，数据库: {database}")
@@ -660,12 +677,15 @@ async def get_hyperrag_status(database: str = None):
             if database in hyperrag_instances:
                 instance = hyperrag_instances[database]
                 status["initialized"] = True
+                settings = _load_settings_defaults()
                 try:
                     status["details"] = {
                         "chunk_token_size": instance.chunk_token_size,
                         "llm_model_name": instance.llm_model_name,
                         "embedding_func_available": instance.embedding_func is not None,
-                        "working_dir": os.path.join(hyperrag_working_dir, database.replace('.hgdb', ''))
+                        "working_dir": os.path.join(hyperrag_working_dir, database.replace('.hgdb', '')),
+                        "hypergraph_backend_mode": settings.get("hypergraphBackendMode", "hgdb"),
+                        "nebula_graph_validated": settings.get("nebulaGraphValidated", False),
                     }
                 except Exception as e:
                     status["details"] = f"Error getting details: {str(e)}"
