@@ -12,7 +12,10 @@ from tqdm import tqdm
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from my_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
-from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+try:
+    from .pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+except ImportError:
+    from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 
 def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs) -> str:

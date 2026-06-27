@@ -2,7 +2,10 @@ import argparse
 import json
 from pathlib import Path
 
-from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+try:
+    from .pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+except ImportError:
+    from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 
 def extract_unique_contexts(input_directory, output_directory):

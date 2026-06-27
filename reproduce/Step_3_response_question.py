@@ -14,7 +14,10 @@ from hyperrag.llm import openai_complete_if_cache, openai_embedding
 from hyperrag.utils import EmbeddingFunc, always_get_an_event_loop
 from my_config import EMB_API_KEY, EMB_BASE_URL, EMB_DIM, EMB_MODEL
 from my_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
-from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+try:
+    from .pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
+except ImportError:
+    from pipeline_defaults import DATA_NAME as DEFAULT_DATA_NAME
 
 
 async def llm_model_func(
